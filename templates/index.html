@@ -1,0 +1,340 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AlgoTrade</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+
+  <style>
+    /* CSS styles can be applied to divs for layout and styling */
+    .header {
+      background-color: #333;
+      color: #e8a413;
+      padding: 8px;
+      font-family: 'Comic Sans MS', cursive, sans-serif; /* Change the font family to Comic Sans MS with fallbacks */
+
+    }
+    .sidebar {
+      font-family: 'Comic Sans MS', cursive, sans-serif; /* Change the font family to Comic Sans MS with fallbacks */
+      font-size:15px;
+      float: left;
+      width: 20%;
+      background-color: #f2f2f2;
+      padding: 50px;
+
+    }
+
+    .content {
+      text-align:center;
+
+    }
+
+    .label {
+      display: inline-block; /* Display labels side by side */
+      width: 180px; /* Set a fixed width for the labels */
+      margin-left: 80px; /* Add margin to create space between labels */
+      font-family: 'Comic Sans MS', cursive, sans-serif; /* Change the font family to Comic Sans MS with fallbacks */
+    }
+    .strategy-result {
+      font-family: 'Comic Sans MS', cursive, sans-serif; /* Change the font family to Comic Sans MS with fallbacks */
+      font-size:13px;
+      float:left;
+    }
+
+    .checkboxes{
+     margin-top:11px;
+     font-family: 'Comic Sans MS', cursive, sans-serif; /* Change the font family to Comic Sans MS with fallbacks */
+     font-size:11px;
+     float: right; /* Align the radio buttons to the right */
+     width: 20%;
+    }
+
+    /* Style for the radio buttons */
+    .checkboxes label {
+        display: block;
+
+    }
+
+     .date-selector {
+      margin-top: 50px;
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+      text-align:center;
+    }
+
+    .download-button {
+        margin-top: 20px;
+        text-align:center;
+    }
+
+
+    .footer {
+      margin-top:20px;
+      clear: both;
+      background-color: #333;
+      color: #fff;
+      padding:10px;
+    }
+    #connectionStatus{color:green;}
+
+    .expiry{
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+      text-align:center;
+      margin-top:20px;
+      }
+    .Square_off_strategy{
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+      text-align:center;
+      padding:8px;
+    }
+
+
+  </style>
+
+<body>
+  <div class="header">
+    <h1>AlgoTrade</h1>
+  </div>
+
+  <div class="sidebar">
+    <h2>Dashboard</h2>
+        <h3>Select Mode</h3>
+    <label>
+      <input type="radio" name="radioOption" value="Simulator"> Simulation
+    </label>
+    <br>
+    <label>
+      <input type="radio" name="radioOption" value="Live"> Live
+    </label>
+
+     <h4></h4>
+    <button onclick="on_connect()">Connect</button>
+        <div id="connectionStatus"></div>
+
+  </div>
+
+  <div class="content">
+    <span class="label" id = "Banknifty_id">BANKNIFTY:0</span>
+    <span class="label" id = "Nifty_id">NIFTY50:0</span>
+    <span class="label" id = "Finnifty_id">FINNIFTY:0</span>
+
+  </div>
+
+  <div class="strategy-result">
+      <h2>Strategy Result</h2>
+    <table border="1">
+        <tr>
+            <th>STRATEGY</th>
+            <th>STATUS</th>
+            <th>POSITION</th>
+            <th>MTM</th>
+        </tr>
+        <tr>
+            <td id="strategy_TREND_EMA">N/A</td>
+            <td id="status_TREND_EMA">N/A</td>
+            <td id="position_TREND_EMA">N/A</td>
+            <td id="mtm_TREND_EMA">N/A</td>
+
+        </tr>
+
+        <tr>
+            <td id="strategy_SharpeRev">N/A</td>
+            <td id="status_SharpeRev">N/A</td>
+            <td id="position_SharpeRev">N/A</td>
+            <td id="mtm_SharpeRev">N/A</td>
+
+         </tr>
+
+        <tr>
+            <td id="strategy_MOM_BURST">N/A</td>
+            <td id="status_MOM_BURST">N/A</td>
+            <td id="position_MOM_BURST">N/A</td>
+            <td id="mtm_MOM_BURST">N/A</td>
+
+         </tr>
+
+
+    </table>
+  </div>
+  <div class="checkboxes">
+    <h2>Select Strategy</h2>
+      <label for="TREND_EMA">
+        <input type="checkbox" name="TREND_EMA" value="TREND_EMA" id="TREND_EMA"> TREND_EMA
+      </label>
+
+      <label for="SharpeRev" >
+        <input type="checkbox" name="SharpeRev" value="SharpeRev" id="SharpeRev"> SharpeRev
+      </label>
+
+      <label for=MOM_BURST>
+        <input type="checkbox" name="MOM_BURST" value="MOM_BURST" id="MOM_BURST"> MOM_BURST
+      </label>
+
+      <!-- Add more checkboxes for each strategy you have -->
+  </div>
+   <div class="date-selector">
+        <label for="startDatePicker">Start Date:</label>
+        <input type="date" id="startDatePicker">
+        <label for="endDatePicker">End Date:</label>
+        <input type="date" id="endDatePicker">
+    </div>
+
+   <div class="download-button">
+        <button onclick="downloadCSV()">Download CSV</button>
+   </div>
+   <br>
+   <div class="expiry">
+    <span>
+        <label for="BankNifty_expiry">BANKNIFTY:</label>
+        <input type="text" id="BankNifty_expiry"  name=BankNifty_expiry placeholder="expiry">
+    </span>
+
+    <span>
+        <label for="Nifty50_expiry">NIFTY50:</label>
+        <input type="text" id="Nifty50_expiry"  name=Nifty50_expiry placeholder="expiry" >
+    </span>
+
+    <span>
+        <label for="FinNifty_expiry">FINNIFTY:</label>
+        <input type="text" id="FinNifty_expiry" name=FinNifty_expiry placeholder="expiry">
+    </span>
+   </div>
+  <br>
+
+  <br>
+  <div class="Square_off_strategy">
+    <form method="POST" action="/Square_off_Position">
+        <label for=Square_off_strategy>Select Strategy:</label>
+        <select name="Square_off_strategy" id="Square_off_strategy">
+            <option value="TREND_EMA">TREND_EMA</option>
+            <option value="SharpeRev">SharpeRev</option>
+            <option value="MOM_BURST">MOM_BURST</option>
+
+        </select>
+        <button type="submit">SQUARE-OFF</button>
+    </form>
+   </div>
+
+
+  <div class="footer">
+    &copy; 2023 AlgoTrade
+  </div>
+  <script>
+    function fetchPosition() {
+        $.get('/update_positions', function (data) {
+            $('#strategy_TREND_EMA').text(data['TREND_EMA'].STRATEGY_NAME);
+            $('#status_TREND_EMA').text(data['TREND_EMA'].STATUS);
+            $('#position_TREND_EMA').text(data['TREND_EMA'].POSITION);
+            $('#mtm_TREND_EMA').text(data['TREND_EMA'].MTM);
+
+            $('#strategy_SharpeRev').text(data['SharpeRev'].STRATEGY_NAME);
+            $('#status_SharpeRev').text(data['SharpeRev'].STATUS);
+            $('#position_SharpeRev').text(data['SharpeRev'].POSITION);
+            $('#mtm_SharpeRev').text(data['SharpeRev'].MTM);
+
+            $('#strategy_MOM_BURST').text(data['MOM_BURST'].STRATEGY_NAME);
+            $('#status_MOM_BURST').text(data['MOM_BURST'].STATUS);
+            $('#position_MOM_BURST').text(data['MOM_BURST'].POSITION);
+            $('#mtm_MOM_BURST').text(data['MOM_BURST'].MTM);
+
+        });
+    }
+
+    setInterval(fetchPosition, 1000);
+</script>
+
+  <script>
+    function updateTickData() {
+      // Use JavaScript to fetch tick data and update the HTML elements
+      fetch('/update-tick-data')  // Make an API request to the server to fetch new tick data
+          .then(response => response.json())
+          .then(data => {
+              document.getElementById('Banknifty_id').textContent = `BANKNIFTY: ${data.banknifty}`;
+              document.getElementById('Nifty_id').textContent = `NIFTY50: ${data.nifty}`;
+              document.getElementById('Finnifty_id').textContent = `FINNIFTY: ${data.finnifty}`;
+          });
+    }
+
+    // Update the tick data every 5 seconds (adjust the interval as needed)
+    setInterval(updateTickData, 1000);
+  </script>
+   <script>
+        // Your existing JavaScript code
+
+        // Function to download the CSV (you should define this function)
+        function downloadCSV() {
+            var startDate = document.getElementById("startDatePicker").value;
+            var endDate = document.getElementById("endDatePicker").value;
+             $.post('/get_csv', { start_date: startDate, end_date: endDate }, function(data) {
+                // Handle the CSV file or download it as needed
+                // For example, you can create a download link
+                var downloadLink = document.createElement('a');
+                downloadLink.href = 'data:text/csv;charset=utf-8,' + encodeURI(data);
+                downloadLink.target = '_blank';
+                downloadLink.download = 'filtered_data.csv';
+                downloadLink.click();
+            });
+
+            // Implement CSV download logic with selected date range
+        }
+    </script>
+    <script>
+    function on_connect() {
+        const connectionStatus = document.getElementById('connectionStatus');
+        connectionStatus.textContent = 'Connecting...'; // Display a message while connecting
+
+<!--    strategy selector-->
+        const isTREND_EMASelected = document.querySelector('input[name="TREND_EMA"]').checked;
+        const isSharpRevSelected = document.querySelector('input[name="SharpeRev"]').checked;
+        const isMOM_BURSTSelected = document.querySelector('input[name="MOM_BURST"]').checked;
+
+<!--    expiry-->
+        const BANK_NIFTY_EXP = document.querySelector('input[name="BankNifty_expiry"]').value;
+        const NIFTY_EXP = document.querySelector('input[name="Nifty50_expiry"]').value;
+        const FIN_NIFTY_EXP = document.querySelector('input[name="FinNifty_expiry"]').value;
+
+        // Create the selected strategy and expiry objects
+        const STRATEGY_SELECTED = {
+            'TREND_EMA': isTREND_EMASelected,
+            'SharpeRev': isSharpRevSelected,
+            'MOM_BURST':isMOM_BURSTSelected,
+        };
+
+        const EXPIRY = {
+            'NSE:NIFTYBANK-INDEX': BANK_NIFTY_EXP,
+            'NSE:NIFTY50-INDEX': NIFTY_EXP,
+            'NSE:FINNIFTY-INDEX': FIN_NIFTY_EXP
+        };
+
+        // Make a POST request to /on_connect with the selected_strategy and expiry
+        fetch('/on_connect', {
+            method: 'POST',
+            body: JSON.stringify({
+                'selected_strategy': STRATEGY_SELECTED,
+                'expiry': EXPIRY
+            }),  headers: {'Content-Type': 'application/json',},
+        })
+        .then(response => response.text())
+        .then(data => {
+            console.log(data);
+            connectionStatus.textContent =data;
+        })
+        .catch(error => {
+            console.error(error);
+            // Update the status message to show an error if needed
+            connectionStatus.textContent = 'Connection failed';
+        });
+    }
+</script>
+<script>
+        function setInitialConnectionStatus() {
+        $.get('/get_connection_status', function (data) {
+            const connectionStatus = document.getElementById('connectionStatus');
+            connectionStatus.textContent = data;
+        });
+    }
+
+ setInitialConnectionStatus();
+</script>
+</body>
+</html>
