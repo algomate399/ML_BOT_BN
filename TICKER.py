@@ -9,7 +9,7 @@ class TICKER_:
     LIVE_FEED = None
 
     def __init__(self, ticker):
-        self.update_freq = 1
+        self.update_freq = 5
         self.request_retry = 3
         self.ticker_under_strategy = ticker
         self.time_zone = pytz.timezone('Asia/Kolkata')
@@ -54,7 +54,7 @@ class TICKER_:
         return self.hist_df
 
     def run_update(self):
-
+        print('run_update')
         for ticker,interval in self.ticker_under_strategy.items():
             hist = self.get_history(ticker,interval)
             if not hist.empty:
