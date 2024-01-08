@@ -112,6 +112,7 @@ class STRATEGY_REPO:
         features = None
         signal = 0
         if self.is_valid_time_zone():
+            print(self.strategy_name , 'valid_zone' ,datetime.now())
             self.dt = self.TICKER.get_data(self.symbol, f'{self.interval}T')
             if self.strategy_name == 'TREND_EMA':
                 features = self.TREND_EMA(**self.get_params)
