@@ -28,8 +28,8 @@ def on_tick():
         if BROKER_APP:
             BROKER_APP.on_tick()
             time.sleep(1)
-    # else:
-    #     BROKER_APP.stop_websocket()
+    else:
+        BROKER_APP.stop_websocket()
 
 
 # creating flask web app
@@ -55,26 +55,26 @@ def connect():
         HIST_APP = HIST_BROKER_()
 
         # login to brokers and connecting websocket for datafeed
-        ACCESS_TOKEN = HIST_APP.login()
-        BROKER_APP.ACCESS_TOKEN = ACCESS_TOKEN
+        BROKER_APP.login()
+        HIST_APP.login()
         BROKER_APP.BROKER_WEBSOCKET_INT()
 
         # TICKER and interval  used  in strategies
-        TICKER_UNDER_STRATEGY = {'NSE:NIFTY50-INDEX':1,'NSE:NIFTYBANK-INDEX':1}
+        TICKER_UNDER_STRATEGY = {'NSE:NIFTYBANK-INDEX':5}
         TICKER_.BROKER_OBJ = HIST_APP.BROKER_APP
         TICK = TICKER_(TICKER_UNDER_STRATEGY)
         BROKER_API.TICKER_OBJ = TICK
         TICKER_.LIVE_FEED = BROKER_APP
 
-        # setting and creating strategy obj-
+        # setting and creating strategy obj
         StrategyFactory.TICKER = TICK
         StrategyFactory.LIVE_FEED = BROKER_APP
         StrategyFactory.time_zone = pytz.timezone('Asia/Kolkata')
 
         # selecting strategy which is selected with checkbox
-        STRATEGY = {'TREND_EMA': {'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'interval':30},
-                    'SharpeRev': {'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'interval': 15},
-                    'MOM_BURST': {'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'interval': 15},
+        STRATEGY = {'TREND_EMA': {'mode': 'Simulator', 'ticker': 'NSE:NIFTYBANK-INDEX', 'interval': '1h'},
+                    'SharpeRev': {'mode': 'Simulator', 'ticker': 'NSE:NIFTYBANK-INDEX', 'interval': '45T'},
+                    'MOM_BURST': {'mode': 'Simulator', 'ticker': 'NSE:NIFTYBANK-INDEX', 'interval': '45T'},
                     }
 
         json = request.get_json()
@@ -199,5 +199,5 @@ def Sqaure_off_Position():
 
 
 
-# if __name__ == '__main__':
-#     app.run()
+if __name__ == '__main__':
+    app.run()

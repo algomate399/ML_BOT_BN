@@ -17,6 +17,7 @@ class StrategyFactory(STRATEGY_REPO):
         self.strike_interval = {'NSE:NIFTYBANK-INDEX': 100, 'NSE:NIFTY50-INDEX': 50, 'NSE:FINNIFTY-INDEX': 50}
         # initializing the variables
         self.signal = 0
+        self.spot = 0
         self.trade_flag = True
         self.ticker_space = pd.DataFrame()
         OrderMng.LIVE_FEED = self.LIVE_FEED
@@ -29,11 +30,11 @@ class StrategyFactory(STRATEGY_REPO):
     def get_instrument(self, option_type, step):
         # calculating option strike price
         interval = self.strike_interval[self.symbol]
-        spot = self.LIVE_FEED.get_ltp(self.symbol)
-        strike = lambda: (round(spot / interval)) * interval
+        self.spot = self.LIVE_FEED.get_ltp(self.symbol) if not self.spot else self.spot
+        strike = lambda: (round(self.spot / interval)) * interval
         ATM = strike()
         stk = ATM + interval * step
-        instrument = f'NSE:{self.index}{self.expiry}{stk}{option_type}'
+        instrument = f'{self.index}{self.expiry}{option_type[0]}{stk}'
         # appending into the list for future use
         self.instrument_under_strategy.append(instrument)
 
@@ -46,6 +47,7 @@ class StrategyFactory(STRATEGY_REPO):
                 instrument = self.get_instrument(value['opt'], value['step'])
                 self.param[instrument] = {'Instrument': instrument, 'Transtype': value['transtype'],
                                           'Qty': value['Qty']}
+
             # subscribing for instrument
             instrument_to_subscribe = [instrument for instrument in self.instrument_under_strategy if instrument not in self.LIVE_FEED.ltp]
             if instrument_to_subscribe:
@@ -63,7 +65,9 @@ class StrategyFactory(STRATEGY_REPO):
 
             # once the order is placed , this function will be de-scheduled
             self.scheduler.clear()
-
+            self.spot = 0
+            if self.position:
+                self.trailing_stops_candle_close()
 
     def on_tick(self):
         if self.position:
@@ -76,14 +80,16 @@ class StrategyFactory(STRATEGY_REPO):
         # updating ticker space
         if not self.position and self.trade_flag:
             self.signal = self.get_signal()
-            print(self.strategy_name , self.signal)
             if self.signal:
-                 self.scheduler.every(4).seconds.do(self.Open_position)
+                self.scheduler.every(4).seconds.do(self.Open_position)
 
         print(f'Monitor signal : {datetime.now(self.time_zone)} : {self.strategy_name}:{self.signal}')
 
-        if self.position:
+        if self.position and self.is_valid_time_zone():
             self.trailing_stops_candle_close()
+            signal = self.verify_bar_since()
+            if signal and self.signal != self.position:
+                self.squaring_of_all_position_AT_ONCE()
 
     def Exit_position_on_real_time(self):
         #   exit position on the live ltp basis on realtime
@@ -122,7 +128,8 @@ class StrategyFactory(STRATEGY_REPO):
         # updating mtm after order placement
         self.STR_MTM = self.OrderManger.CumMtm
         self.signal = 0
-        self.stop = 0
+        self.stops = 0
+        self.entry_i = 0
         self.OrderManger.refresh_variable()
         # symbol to unsubscribe
         self.instrument_under_strategy = []
