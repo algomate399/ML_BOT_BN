@@ -274,11 +274,11 @@ class STRATEGY_REPO:
         if self.position:
             spot = self.LIVE_FEED.get_ltp(self.symbol)
             if (self.position > 0) and (spot > 0) and self.stops:
-                if (self.stops > spot) or (self.verify_bar_since() < 0):
+                if self.stops > spot:
                     self.stops = 0
                     hit = True
             elif (self.position < 0) and (spot > 0) and self.stops:
-                if (self.stops < spot) or (self.verify_bar_since() > 0):
+                if self.stops < spot:
                     self.stops = 0
                     hit = True
 
