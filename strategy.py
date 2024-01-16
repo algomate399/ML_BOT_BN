@@ -83,8 +83,6 @@ class StrategyFactory(STRATEGY_REPO):
             if self.signal:
                 self.scheduler.every(4).seconds.do(self.Open_position)
 
-        print(f'Monitor signal : {datetime.now(self.time_zone)} : {self.strategy_name}:{self.signal}')
-
         if self.position and self.is_valid_time_zone():
             self.trailing_stops_candle_close()
             signal = self.verify_bar_since()
