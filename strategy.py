@@ -25,8 +25,6 @@ class StrategyFactory(STRATEGY_REPO):
         self.instrument_under_strategy = []
         self.scheduler = schedule.Scheduler()
 
-
-
     def get_instrument(self, option_type, step):
         # calculating option strike price
         interval = self.strike_interval[self.symbol]
@@ -108,7 +106,6 @@ class StrategyFactory(STRATEGY_REPO):
         sequence = {k: v for k, v in
                     sorted(self.OrderManger.Transtype.items(),
                            key=lambda item: (item[1] == 'BUY', item[1] == 'SELL'))}
-
 
         # ensuring every position is squared off if not break the loop else set open position to zero
         for instrument in sequence.keys():
