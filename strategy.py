@@ -32,7 +32,7 @@ class StrategyFactory(STRATEGY_REPO):
         strike = lambda: (round(self.spot / interval)) * interval
         ATM = strike()
         stk = ATM + interval * step
-        instrument = f'{self.index}{self.expiry}{option_type[0]}{stk}'
+        instrument = f'NSE:{self.index}{self.expiry}{stk}{option_type}'
         # appending into the list for future use
         self.instrument_under_strategy.append(instrument)
 
