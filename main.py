@@ -143,7 +143,7 @@ def update_positions():
         'MTM': value,
         }
 
-
+    json['TOTAL'] = {'TOTAL_MTM':sum([strategy.STR_MTM for strategy in STRATEGY_FAC.values()])}
     return jsonify(json)
 
 
