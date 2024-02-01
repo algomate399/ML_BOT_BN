@@ -34,7 +34,8 @@ class STRATEGY_REPO:
         self.model = None
         self.model_1 = None
         self.model_2 = None
-        self.pca = None
+        self.pca_1 = None
+        self.pca_2 = None
         self.quantile_DN = {}
         self.quantile_UP = {}
         self.load_model()
@@ -49,12 +50,13 @@ class STRATEGY_REPO:
         self.bar_since = {name:bars for name,bars in zip(['SharpeRev', 'TREND_EMA','MOM_BURST'],[2, 1, 2])}
 
     def load_model(self):
-        self.model_1 = self.get_model(n=1)
-        self.model_2 = self.get_model(n=2)
-        self.pca = self.get_model(n=0)
+        self.model_1 = self.get_model(1, 'ML')
+        self.model_2 = self.get_model(2,'ML')
+        self.pca_1 = self.get_model(1, 'PCA')
+        self.pca_2 = self.get_model(2, 'PCA')
 
-    def get_model(self,n=0):
-        file_name = f'{self.strategy_name}_PCA' if n == 0 else f'{self.strategy_name}_{n}'
+    def get_model(self, n, model):
+        file_name = f'{self.strategy_name}_PCA_{n}' if model == 'PCA' else f'{self.strategy_name}_{n}'
         with open(f'{file_name}.pkl', 'rb') as file:
             loaded_model = pk.load(file)
         return loaded_model
@@ -146,11 +148,11 @@ class STRATEGY_REPO:
 
     def predictor(self,UP):
         prediction = None
-        # pca transformation before making predictions
-        model_input = self.pca.transform(self.normalized_features.values[-1].reshape(1,-1))
         if UP:
+            model_input = self.pca_1.transform(self.normalized_features.values[-1].reshape(1, -1))
             prediction = self.model_1.predict(model_input)
         else:
+            model_input = self.pca_2.transform(self.normalized_features.values[-1].reshape(1, -1))
             prediction = self.model_2.predict(model_input)
 
         return 1 if prediction[0] else -1
