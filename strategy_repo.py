@@ -3,11 +3,13 @@ from datetime import datetime,timedelta
 import numpy as np
 import pandas_ta as ta
 import pickle as pk
+from sklearn.decomposition import PCA
 
 def Z_score(dt ,length):
     mean = dt.ewm(span=length).mean()
     std = dt.ewm(span=length).std()
     return (dt-mean)/std
+
 def calculate_MOM_Burst( dt,lookback):
     candle_range = dt['high']-dt['low']
     mean_range = candle_range.rolling(window=lookback).mean()
@@ -32,6 +34,7 @@ class STRATEGY_REPO:
         self.model = None
         self.model_1 = None
         self.model_2 = None
+        self.pca = None
         self.quantile_DN = {}
         self.quantile_UP = {}
         self.load_model()
@@ -43,14 +46,15 @@ class STRATEGY_REPO:
         self.data = None
         self.params = None
         self.entry_i = 0
-        self.bar_since = {name:bars for name,bars in zip(['SharpeRev', 'TREND_EMA','MOM_BURST'],[2, 1, 3])}
+        self.bar_since = {name:bars for name,bars in zip(['SharpeRev', 'TREND_EMA','MOM_BURST'],[2, 1, 2])}
 
     def load_model(self):
         self.model_1 = self.get_model(n=1)
         self.model_2 = self.get_model(n=2)
+        self.pca = self.get_model(n=0)
 
     def get_model(self,n=0):
-        file_name = f'{self.strategy_name}' if n == 0 else f'{self.strategy_name}_{n}'
+        file_name = f'{self.strategy_name}_PCA' if n == 0 else f'{self.strategy_name}_{n}'
         with open(f'{file_name}.pkl', 'rb') as file:
             loaded_model = pk.load(file)
         return loaded_model
@@ -73,7 +77,7 @@ class STRATEGY_REPO:
     def is_valid_time_zone(self):
         cond1 = False
         cond2 = False
-        current_time = datetime.now(self.time_zone).replace(microsecond=0, second=0)
+        current_time = datetime.now(self.time_zone).replace(microsecond=0,second=0)
         if current_time not in self.executed_timeseries:
             cond1 = datetime.now(self.time_zone).time() > datetime.strptime('09:30:00', "%H:%M:%S").time()
             cond2 = current_time in self.time_series
@@ -92,23 +96,22 @@ class STRATEGY_REPO:
     def get_params(self):
         param = None
         if self.strategy_name == 'SharpeRev':
-            param = {'QLVL': 0.3316991241695094,'dfactor': 0,'lags_sharpe': 4,'lookback': 7,'normal_window': 83,'q_dn': 0.2914052264355287,'q_up': 0.8743764820709422,'window': 6}
+            param = {'QLVL': 0.19250524795855262, 'dfactor': -7, 'lags': 0, 'lookback': 6, 'normal_window': 108,'q_dn': 0.30131592147407826, 'q_up': 0.917236927531908, 'window': 6}
         elif self.strategy_name == 'TREND_EMA':
-            param = {'window': 31,'QLVL': 0.11619745224891342,'dfactor': -4,'ema': 21,'lags': 2,'lookback_1': 6,'lookback_2': 11,'normal_window': 51,'rsi_p': 11}
+            param = {'QLVL': 0.6808163943842158, 'ang_1': 6, 'ang_2': 21, 'lags': 0, 'lookback': 7, 'lookback_1': 7,'lookback_2': 16, 'lookback_3': 36, 'normal_window': 132, 'z': 16}
         elif self.strategy_name == 'MOM_BURST':
-            param = {'QLVL': 0.3252220643348708,'dfactor': -3,'lags': 2,'lookback': 7,'normal_window': 55}
-
+            param = {'QLVL': 0.41078694696051077,'dfactor': -13,'lags': 3,'lookback': 8,'normal_window': 66}
         return param
 
     @property
     def get_params_Stops(self):
         param = None
         if self.strategy_name == 'SharpeRev':
-            param = {'atr_p': 7, 'factor': 0.6888427828126441}
+            param = {'atr_p': 7, 'factor': 1.4601886501682961}
         elif self.strategy_name == 'TREND_EMA':
-            param = {'atr_p': 5, 'factor': 1.4418525117610281}
+            param = {'atr_p': 14, 'factor': 0.8972258613982906}
         elif self.strategy_name == 'MOM_BURST':
-            param = {'atr_p': 9, 'factor': 0.9943062143597671}
+            param = {'atr_p': 33, 'factor': 1.3857191334468304}
 
         return param
 
@@ -143,29 +146,65 @@ class STRATEGY_REPO:
 
     def predictor(self,UP):
         prediction = None
+        # pca transformation before making predictions
+        model_input = self.pca.transform(self.normalized_features.values[-1].reshape(1,-1))
         if UP:
-            prediction = self.model_1.predict(self.normalized_features.values[-1].reshape(1,-1))
+            prediction = self.model_1.predict(model_input)
         else:
-            prediction = self.model_2.predict(self.normalized_features.values[-1].reshape(1,-1))
-        line_ = f'Time:{datetime.now(self.time_zone)}-Index:{self.normalized_features.index[-1]}:signal:{prediction[0]}{self.strategy_name}'
-        print(line_)
-        print(self.normalized_features.iloc[-1])
+            prediction = self.model_2.predict(model_input)
+
         return 1 if prediction[0] else -1
 
-    def SharpeRev(self,lookback, q_dn,q_up,window, normal_window,lags_sharpe, QLVL,dfactor):
-        # initialization of variables
+    def MOM_BURST(self, lookback, normal_window, lags, QLVL, dfactor):
+        # Initialization of variables
+
         features = pd.DataFrame()
         lookback = lookback - dfactor if (lookback - dfactor) >= 2 else lookback
 
         # calculating indicator values
+        v1, v2 = calculate_MOM_Burst(self.data, lookback)
+        candle_range = self.data['high'] - self.data['low']
+        rsi = ta.rsi(self.data['close'], lookback)
+
+#       calculating strategy components(spr , quantiles)
+        features['volatility'] = self.volatility
+        features['mom_burst'] = v1
+        features['pct_change'] = self.data['close'].pct_change()
+        features['range_mean_vs_candle_range'] = candle_range / v2
+        features['mom_burst_hh'] = v1 / v1.rolling(window=lookback).max().shift(1)
+        features['mom_burst_ll'] = v1.rolling(window=lookback).min().shift(1) / v1
+        features['rsi'] = rsi
+
+        for col in ['range_mean_vs_candle_range', 'mom_burst_hh', 'mom_burst_ll']:
+            features[f'{col}_STD'] = features[col].ewm(span=lookback).std()
+
+#       lags values for the features
+        if lags:
+            lag_values = pd.DataFrame()
+            for col in features.columns:
+                for lag in range(1, lags + 1):
+                    lag_values[f'{col}_{lag}'] = features[col].shift(lag)
+            # concatenate the feature and lag features
+            features = pd.concat([features, lag_values], axis=1)
+
+        #       normalization the features
+        normalized_features = self.Normalization(features, normal_window)
+        normalized_features['dayofweek'] = normalized_features.index.dayofweek
+        return normalized_features
+
+    def SharpeRev(self, lookback, q_dn, q_up, window, normal_window, lags, QLVL, dfactor):
+        # Initialization of variables
+        features = pd.DataFrame()
+        lookback = lookback - dfactor if (lookback - dfactor) >= 2 else lookback
+
+        #       calculating indicator values
         features['volatility'] = self.volatility
         mean = self.data['close'].pct_change().rolling(window=lookback).mean() * 100
         std = self.data['close'].pct_change().rolling(window=lookback).std() * 100
         pct_change = self.data['close'].pct_change() * 100
         spr = (pct_change - mean) / std
         EMA = self.data['close'].ewm(span=lookback).mean()
-
-        # calculating strategy components (spr , quantiles)
+        #  calculating strategy components(spr , quantiles)
         features['spr'] = spr
         features['quan_up'] = features['spr'].rolling(window=window).quantile(q_up)
         features['quan_dn'] = features['spr'].rolling(window=window).quantile(q_dn)
@@ -173,93 +212,88 @@ class STRATEGY_REPO:
         features['spr_quan_dn'] = features['spr'] - features['quan_dn']
         features['sentiment'] = EMA - self.data['close']
 
-        lag_values = pd.DataFrame()
-        for col in features.columns:
-            for lag in range(1, lags_sharpe):
-                lag_values[f'{col}_{lag}'] = features[col].shift(lag)
+        if lags:
+            lag_values = pd.DataFrame()
+            for col in features.columns:
+                for lag in range(1, lags + 1):
+                    lag_values[f'{col}_{lag}'] = features[col].shift(lag)
+                    # concatenate the feature and lag features
+            features = pd.concat([features, lag_values], axis=1)
 
-        # merge the feature and lag features
-        features = pd.concat([features, lag_values], axis=1)
-        # normalization the features
-        normalized_features = self.Normalization(features, normal_window)
-        normalized_features['dayofweek'] = normalized_features.index.dayofweek
-        return normalized_features
-
-    def TREND_EMA(self,ema,lookback_1 ,lookback_2 , rsi_p , normal_window , lags , QLVL , dfactor ,window):
-        # initialization of variables
-        features = pd.DataFrame()
-        ema = ema - dfactor if (ema - dfactor) >= 2 else ema
-        rsi_p = rsi_p - dfactor if (rsi_p - dfactor) >= 2 else rsi_p
-
-        # calculating indicator values
-        EMA = self.data['close'].ewm(span=ema).mean()
-        rsi = ta.rsi(self.data['close'], rsi_p)
-        angle_1 = ta.slope(EMA, lookback_1)
-        angle_2 = ta.slope(EMA, lookback_2)
-
-        # calculating strategy components
-        features['volatility'] = self.volatility
-        features['EMA'] = EMA
-        features['rsi'] = rsi
-        features['angle_1'] = angle_1
-        features['angle_2'] = angle_2
-        features['angle_diff'] = angle_1 / angle_2
-        features['range_1_std'] = (self.data['high'] - self.data['low'].shift(1)).rolling(window=lookback_1).std()
-        features['range_2_std'] = (self.data['high'] - self.data['low'].shift(1)).rolling(window=lookback_2).std()
-        features['range_diff'] = features['range_1_std'] / features['range_2_std']
-        features['ema_close'] = self.data['close'] / EMA
-        features['pct_change'] = self.data['close'].pct_change()
-        features['Zscore'] = Z_score(self.data['close'], window)
-
-        lag_values = pd.DataFrame()
-        for col in features.columns:
-            for lag in range(1, lags):
-                lag_values[f'{col}_{lag}'] = features[col].shift(lag)
-
-        # merge the feature and lag features
-        features = pd.concat([features, lag_values], axis=1)
         #       normalization the features
         normalized_features = self.Normalization(features, normal_window)
         normalized_features['dayofweek'] = normalized_features.index.dayofweek
+
         return normalized_features
 
-    def MOM_BURST(self,lookback,normal_window,lags ,QLVL , dfactor):
-        # initialization of variables
+    def TREND_EMA(self, lookback, lookback_1, lookback_2, lookback_3, ang_1, ang_2, z, normal_window,lags, QLVL ,dfactor):
+        # Initialization of variables
         features = pd.DataFrame()
-        lookback = lookback - dfactor if (lookback - dfactor) >= 2 else lookback
 
-        # calculating indicator values
-        v1, v2 = calculate_MOM_Burst(self.data, lookback)
-        candle_range = self.data['high'] - self.data['low']
+        #       calculating indicator values
+        rsi = ta.rsi(self.data['close'], lookback)
+        adx = ta.adx(self.data['high'], self.data['low'], self.data['close'], lookback)
+        ema_1 = self.data['close'].ewm(span=lookback_1).mean()
+        ema_2 = self.data['close'].ewm(span=lookback_2).mean()
+        ema_3 = self.data['close'].ewm(span=lookback_3).mean()
+
+        # calculating degrees of ema
+        angle_1_FAST = ta.slope(ema_1, ang_1)
+        angle_2_FAST = ta.slope(ema_2, ang_1)
+        angle_3_FAST = ta.slope(ema_3, ang_1)
+        angle_1_SLOW = ta.slope(ema_1, ang_2)
+        angle_2_SLOW = ta.slope(ema_2, ang_2)
+        angle_3_SLOW = ta.slope(ema_3, ang_2)
+
+        # calculating z score
+        z_1 = Z_score(ema_1, z)
+        z_2 = Z_score(ema_2, z)
+        z_3 = Z_score(ema_3, z)
+        z_4 = Z_score(rsi, z)
 
         # calculating strategy components
         features['volatility'] = self.volatility
-        features['mom_burst'] = v1
-        features['pct_change'] = self.data['close'].pct_change()
-        features['range_mean_vs_candle_range'] = candle_range / v2
-        features['mom_burst_hh'] = v1 / v1.rolling(window=lookback).max().shift(1)
-        features['mom_burst_ll'] = v1.rolling(window=lookback).min().shift(1) / v1
+        features['spr_1'] = ema_1 / ema_2
+        features['spr_2'] = ema_2 / ema_3
+        features['spr_3'] = ema_1 / ema_3
+        features['ang_ratio_1_FAST'] = angle_1_FAST / angle_2_FAST
+        features['ang_ratio_2_FAST'] = angle_2_FAST / angle_3_FAST
+        features['ang_ratio_3_FAST'] = angle_1_FAST / angle_3_FAST
+        features['ang_ratio_1_SLOW'] = angle_1_SLOW / angle_2_SLOW
+        features['ang_ratio_2_SLOW'] = angle_2_SLOW / angle_3_SLOW
+        features['ang_ratio_3_SLOW'] = angle_1_SLOW / angle_3_SLOW
+        features['FAST_SLOW_1'] = angle_1_FAST / angle_1_SLOW
+        features['FAST_SLOW_2'] = angle_2_FAST / angle_2_SLOW
+        features['FAST_SLOW_1'] = angle_3_FAST / angle_3_SLOW
+        features['Z_1'] = z_1
+        features['Z_2'] = z_2
+        features['Z_3'] = z_3
+        features['Z_4'] = z_4
+        features['rsi'] = rsi
+        features['close_ema_1'] = self.data['close'] / ema_1
+        features['close_ema_2'] = self.data['close'] / ema_2
+        features['close_ema_3'] = self.data['close'] / ema_3
 
-        for col in ['range_mean_vs_candle_range', 'mom_burst_hh', 'mom_burst_ll']:
-            features[f'{col}_STD'] = features[col].ewm(span=lookback).std()
+        features = pd.concat([features, adx], axis=1)
 
         lag_values = pd.DataFrame()
         for col in features.columns:
             for lag in range(1, lags):
                 lag_values[f'{col}_{lag}'] = features[col].shift(lag)
 
-        # merger the feature and lag features
+        # concatenate the feature and lag features
         features = pd.concat([features, lag_values], axis=1)
         # normalization the features
         normalized_features = self.Normalization(features, normal_window)
-        # normalized_features['dayofweek'] = normalized_features.index.dayofweek
+        normalized_features['dayofweek'] = normalized_features.index.dayofweek
+
         return normalized_features
 
     def get_stops(self):
         params = self.get_params_Stops
         atr = ta.atr(self.data['high'],self.data['low'],self.data['close'],params['atr_p'])
         lower_bound = self.data['close'] - (params['factor'] * atr)
-        upper_bound = self.data['close']+(params['factor'] * atr)
+        upper_bound = self.data['close'] + (params['factor'] * atr)
         return lower_bound.iloc[-1] if self.position > 0 else upper_bound.iloc[-1]
 
     def trailing_stops_candle_close(self):
@@ -292,5 +326,6 @@ class STRATEGY_REPO:
         if self.entry_i == self.bar_since[self.strategy_name]:
             self.data = self.TICKER.get_data(self.symbol, f'{self.interval}')
             signal = self.get_predictions()
-            print(f'BarVerification:{datetime.now(self.time_zone)}:{self.strategy_name}')
+            self.entry_i = 0
+
         return signal
