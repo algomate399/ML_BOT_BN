@@ -21,7 +21,6 @@ class OrderMng():
         self.entry_time ={}
         self.exit_time = {}
 
-
     def Live_MTM(self):
         for instrument in self.nav.keys():
             if self.net_qty[instrument]:

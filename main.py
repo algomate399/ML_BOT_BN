@@ -72,9 +72,9 @@ def connect():
         StrategyFactory.time_zone = pytz.timezone('Asia/Kolkata')
 
         # selecting strategy which is selected with checkbox
-        STRATEGY = {'TREND_EMA': {'mode': 'Simulator', 'ticker': 'NSE:NIFTYBANK-INDEX', 'interval': '1h'},
-                    'SharpeRev': {'mode': 'Simulator', 'ticker': 'NSE:NIFTYBANK-INDEX', 'interval': '45T'},
-                    'MOM_BURST': {'mode': 'Simulator', 'ticker': 'NSE:NIFTYBANK-INDEX', 'interval': '45T'},
+        STRATEGY = {'TREND_EMA': {'mode': 'Simulator', 'ticker': 'NSE:NIFTYBANK-INDEX', 'interval': '5T'},
+                    'SharpeRev': {'mode': 'Simulator', 'ticker': 'NSE:NIFTYBANK-INDEX', 'interval': '5T'},
+                    'MOM_BURST': {'mode': 'Simulator', 'ticker': 'NSE:NIFTYBANK-INDEX', 'interval': '5T'},
                     }
 
         json = request.get_json()
@@ -143,7 +143,7 @@ def update_positions():
         'MTM': value,
         }
 
-    json['TOTAL'] = {'TOTAL_MTM':sum([strategy.STR_MTM for strategy in STRATEGY_FAC.values()])}
+    json['TOTAL'] = {'TOTAL_MTM': sum([strategy.STR_MTM for strategy in STRATEGY_FAC.values()])}
     return jsonify(json)
 
 
@@ -199,5 +199,5 @@ def Sqaure_off_Position():
 
 
 
-# if __name__ == '__main__':
-#     app.run()
+if __name__ == '__main__':
+    app.run()

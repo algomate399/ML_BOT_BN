@@ -25,8 +25,6 @@ class StrategyFactory(STRATEGY_REPO):
         self.instrument_under_strategy = []
         self.scheduler = schedule.Scheduler()
 
-
-
     def get_instrument(self, option_type, step):
         # calculating option strike price
         interval = self.strike_interval[self.symbol]
@@ -90,7 +88,6 @@ class StrategyFactory(STRATEGY_REPO):
             signal = self.verify_bar_since()
             if signal and signal != self.position:
                 self.squaring_of_all_position_AT_ONCE()
-
 
     def Exit_position_on_real_time(self):
         #   exit position on the live ltp basis on realtime
