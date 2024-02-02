@@ -55,7 +55,7 @@ class STRATEGY_REPO:
         self.pca_1 = self.get_model(1, 'PCA')
         self.pca_2 = self.get_model(2, 'PCA')
 
-    def get_model(self,n,model):
+    def get_model(self, n, model):
         file_name = f'{self.strategy_name}_PCA_{n}' if model == 'PCA' else f'{self.strategy_name}_{n}'
         with open(f'{file_name}.pkl', 'rb') as file:
             loaded_model = pk.load(file)
@@ -91,7 +91,6 @@ class STRATEGY_REPO:
         if self.is_valid_time_zone():
             self.data = self.TICKER.get_data(self.symbol, f'{self.interval}')
             signal = self.get_predictions()
-            print(f'OnBarGetSignal:{datetime.now(self.time_zone)}:signal:{signal}:Index:{self.data.index[-1]}')
 
         return signal
 
@@ -99,22 +98,22 @@ class STRATEGY_REPO:
     def get_params(self):
         param = None
         if self.strategy_name == 'SharpeRev':
-            param = {'QLVL': 0.270999976567996,'dfactor': -9,'lags': 3,'lookback': 8,'normal_window': 147,'q_dn': 0.3276387458655868,'q_up': 0.8832153835407984,'window': 5}
+            param = {'QLVL': 0.19250524795855262, 'dfactor': -7, 'lags': 0, 'lookback': 6, 'normal_window': 108,'q_dn': 0.30131592147407826, 'q_up': 0.917236927531908, 'window': 6}
         elif self.strategy_name == 'TREND_EMA':
-            param = {'QLVL': 0.45970899103832763,'ang_1': 7,'ang_2': 19,'lags': 3,'lookback': 18,'lookback_1': 6,'lookback_2': 13,'lookback_3': 57,'normal_window': 83,'z': 10 , 'dfactor':0}
+            param = {'QLVL': 0.6808163943842158, 'ang_1': 6, 'ang_2': 21, 'lags': 0, 'lookback': 7, 'lookback_1': 7,'lookback_2': 16, 'lookback_3': 36, 'normal_window': 132, 'z': 16 , 'dfactor':0}
         elif self.strategy_name == 'MOM_BURST':
-            param = {'QLVL': 0.5433837935924208,'dfactor': 12,'lags': 0,'lookback': 13,'normal_window': 188}
+            param = {'QLVL': 0.41078694696051077,'dfactor': -13,'lags': 3,'lookback': 8,'normal_window': 66}
         return param
 
     @property
     def get_params_Stops(self):
         param = None
         if self.strategy_name == 'SharpeRev':
-            param = {'atr_p': 8, 'factor': 0.8552449695830764}
+            param = {'atr_p': 7, 'factor': 1.4601886501682961}
         elif self.strategy_name == 'TREND_EMA':
-            param = {'atr_p': 15, 'factor': 1.0059539772637485}
+            param = {'atr_p': 14, 'factor': 0.8972258613982906}
         elif self.strategy_name == 'MOM_BURST':
-            param = {'atr_p': 19, 'factor': 1.5582004284936533}
+            param = {'atr_p': 33, 'factor': 1.3857191334468304}
 
         return param
 
@@ -164,7 +163,7 @@ class STRATEGY_REPO:
         features = pd.DataFrame()
         lookback = lookback - dfactor if (lookback - dfactor) >= 2 else lookback
 
-        #       calculating indicator values
+        # calculating indicator values
         v1, v2 = calculate_MOM_Burst(self.data, lookback)
         candle_range = self.data['high'] - self.data['low']
         rsi = ta.rsi(self.data['close'], lookback)
@@ -240,7 +239,7 @@ class STRATEGY_REPO:
         ema_2 = self.data['close'].ewm(span=lookback_2).mean()
         ema_3 = self.data['close'].ewm(span=lookback_3).mean()
 
-        #       calculating degrees of emas
+        # calculating degrees of ema
         angle_1_FAST = ta.slope(ema_1, ang_1)
         angle_2_FAST = ta.slope(ema_2, ang_1)
         angle_3_FAST = ta.slope(ema_3, ang_1)
@@ -286,7 +285,7 @@ class STRATEGY_REPO:
 
         # concatenate the feature and lag features
         features = pd.concat([features, lag_values], axis=1)
-        #       normalization the features
+        # normalization the features
         normalized_features = self.Normalization(features, normal_window)
         normalized_features['dayofweek'] = normalized_features.index.dayofweek
 
@@ -330,6 +329,5 @@ class STRATEGY_REPO:
             self.data = self.TICKER.get_data(self.symbol, f'{self.interval}')
             signal = self.get_predictions()
             self.entry_i = 0
-            print(f'OnBarVerify:{datetime.now(self.time_zone)}:signal:{signal}:Index:{self.data.index[-1]}')
 
         return signal
