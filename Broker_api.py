@@ -89,13 +89,8 @@ class BROKER_API:
     def stop_websocket(self):
         self.BROKER_APP.stop_websocket()
 
-
-
     def on_tick(self):
 
-        if self.TICKER_OBJ:
-            self.TICKER_OBJ.run_scheduler()
-            #  monitoring strategy
         if self.STRATEGY_RUN:
             for key in self.STRATEGY_RUN.keys():
                 self.STRATEGY_RUN[key].on_tick()

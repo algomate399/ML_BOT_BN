@@ -60,7 +60,7 @@ def connect():
         BROKER_APP.BROKER_WEBSOCKET_INT()
 
         # TICKER and interval  used  in strategies
-        TICKER_UNDER_STRATEGY = {'NSE:NIFTYBANK-INDEX':5}
+        TICKER_UNDER_STRATEGY = {'NSE:NIFTYBANK-INDEX':'D','NSE:NIFTY50-INDEX':'D','NSE:ICICIBANK-EQ':'D', 'NSE:HDFCBANK-EQ':'D', 'NSE:AXISBANK-EQ':'D','NSE:SBIN-EQ':'D'}
         TICKER_.BROKER_OBJ = HIST_APP.BROKER_APP
         TICK = TICKER_(TICKER_UNDER_STRATEGY)
         BROKER_API.TICKER_OBJ = TICK
@@ -72,19 +72,20 @@ def connect():
         StrategyFactory.time_zone = pytz.timezone('Asia/Kolkata')
 
         # selecting strategy which is selected with checkbox
-        STRATEGY = {'TREND_EMA': {'mode': 'Simulator', 'ticker': 'NSE:NIFTYBANK-INDEX', 'interval': '1h'},
-                    'SharpeRev': {'mode': 'Simulator', 'ticker': 'NSE:NIFTYBANK-INDEX', 'interval': '45T'},
-                    'MOM_BURST': {'mode': 'Simulator', 'ticker': 'NSE:NIFTYBANK-INDEX', 'interval': '45T'},
+        TREND_EMA_components = ['NSE:NIFTY50-INDEX', 'NSE:ICICIBANK-EQ', 'NSE:HDFCBANK-EQ', 'NSE:AXISBANK-EQ','NSE:SBIN-EQ']
+
+        STRATEGY = {'TREND_EMA': {'mode': 'Simulator', 'ticker': 'NSE:NIFTYBANK-INDEX','Components':TREND_EMA_components, 'interval': 'D'},
+                    'SharpeRev': {'mode': 'Simulator', 'ticker':'NSE:NIFTYBANK-INDEX','Components': None,'interval': 'D'},
+                    'MOM_BURST': {'mode': 'Simulator', 'ticker':'NSE:NIFTYBANK-INDEX', 'Components':None,'interval': 'D'},
                     }
 
         json = request.get_json()
         SELECTED_STRATEGY = json['selected_strategy']
 
-
         for key,value in STRATEGY.items():
             if SELECTED_STRATEGY[key]:
                 STRATEGY_FAC[key] = StrategyFactory(key, value['mode'],
-                value['ticker'], value['interval'],expiry=json['expiry'][value['ticker']])
+                value['ticker'],value['Components'],value['interval'],expiry=json['expiry'][value['ticker']])
 
         BROKER_APP.STRATEGY_RUN = STRATEGY_FAC
         TICKER_.STRATEGY_RUN = STRATEGY_FAC
