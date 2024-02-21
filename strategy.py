@@ -15,6 +15,7 @@ class StrategyFactory(STRATEGY_REPO):
         self.index = 'NIFTY' if self.symbol == 'NSE:NIFTY50-INDEX' else (
             'BANKNIFTY' if symbol == 'NSE:NIFTYBANK-INDEX' else 'FINNIFTY')
         self.strike_interval = {'NSE:NIFTYBANK-INDEX': 100, 'NSE:NIFTY50-INDEX': 50, 'NSE:FINNIFTY-INDEX': 50}
+        self.expiry_weekday = {'NSE:NIFTYBANK-INDEX':2, 'NSE:NIFTY50-INDEX': 3}
         # initializing the variables
         self.signal = 0
         self.spot = 0
@@ -26,6 +27,12 @@ class StrategyFactory(STRATEGY_REPO):
         OrderMng.LIVE_FEED = self.LIVE_FEED
         self.OrderManger = OrderMng(mode, name,self)
         self.processed_flag = False
+
+    def Is_Valid_time(self):
+        valid_time = False
+        if datetime.now(self.time_zone).time()>datetime.strptime('09:15:00', "%H:%M:%S").time():
+            valid_time = True
+        return valid_time
 
     def get_instrument(self, option_type, step):
         # calculating option strike price
@@ -72,16 +79,17 @@ class StrategyFactory(STRATEGY_REPO):
 
     def on_tick(self):
         # updating the overnight position
-        if not self.overnight_flag:
-            self.Validate_OvernightPosition()
-            if not self.scheduler.jobs:
-                self.scheduler.every(5).seconds.do(self.OrderManger.Update_OpenPosition)
-        else:
-            if not self.position and self.trade_flag and not self.processed_flag:
-                self.signal = self.get_signal()
-                if self.signal:
-                    self.scheduler.every(5).seconds.do(self.Open_position)
-                self.processed_flag = True
+        if self.Is_Valid_time():
+            if not self.overnight_flag:
+                self.Validate_OvernightPosition()
+                if not self.scheduler.jobs:
+                    self.scheduler.every(5).seconds.do(self.OrderManger.Update_OpenPosition)
+            else:
+                if not self.position and self.trade_flag and not self.processed_flag:
+                    self.signal = self.get_signal()
+                    if self.signal:
+                        self.scheduler.every(5).seconds.do(self.Open_position)
+                    self.processed_flag = True
 
         self.STR_MTM = round(self.OrderManger.Live_MTM(),2) if self.position else round(self.OrderManger.CumMtm,2)
         # checking the scheduled task
@@ -89,15 +97,15 @@ class StrategyFactory(STRATEGY_REPO):
         self.Exit_position_on_real_time()
 
     def Exit_position_on_real_time(self):
-        if datetime.now(self.time_zone).time() > datetime.strptime('15:15:00', "%H:%M:%S").time():
-            if self.position:
-                self.squaring_of_all_position_AT_ONCE()
-            self.trade_flag = False
+        if self.expiry_weekday[self.symbol] == datetime.now(self.time_zone).weekday():
+            if datetime.now(self.time_zone).time() > datetime.strptime('15:15:00', "%H:%M:%S").time():
+                if self.position:
+                    self.squaring_of_all_position_AT_ONCE()
+                self.trade_flag = False
 
     def squaring_of_all_position_AT_ONCE(self):
         success = False
         # function ensure instrument will SELL trans_type will be executed first then hedge position
-
         sequence = {k: v for k, v in
                     sorted(self.OrderManger.Transtype.items(),
                            key=lambda item: (item[1] == 'BUY', item[1] == 'SELL'))}

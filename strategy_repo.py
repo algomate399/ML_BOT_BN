@@ -73,11 +73,11 @@ class STRATEGY_REPO:
     def get_params(self):
         param = None
         if self.strategy_name == 'TREND_EMA':
-           param = {'lags': 5,'lookback_1': 5,'lookback_2': 10,'normal_window': 150,'window': 5}
+           param = {'lags': 0,'lookback_1': 8,'lookback_2': 25,'normal_window': 39,'window': 30}
         elif self.strategy_name == 'SharpeRev':
-            param = {'lags': 0, 'lookback': 5,'normal_window': 87,'q_dn': 0.05,'q_up': 1.0,'window': 15}
+            param = {'lags': 3,'lookback': 6,'normal_window': 10,'q_dn': 0.25223046158278517,'q_up': 0.9732648892687361,'window': 11}
         elif self.strategy_name == 'MOM_BURST':
-            param = {'lags': 5,'lookback': 5,'normal_window': 150}
+            param = {'lags': 5,'lookback': 11,'normal_window': 98}
 
         return param
 
@@ -106,9 +106,7 @@ class STRATEGY_REPO:
 
     def generate_features(self):
         params = self.get_params
-        normalized_features,regime_input_ = self.TREND_EMA(**params) if self.strategy_name =='TREND_EMA' else(self.SharpeRev(**params) if self.strategy_name == 'SharpeRev' else self.MOM_BURST(**params))
-        regime = pd.Series(self.regime_model_1.predict(regime_input_), index=regime_input_.index, name='Regime')
-        self.normalized_features = pd.concat([normalized_features, regime], axis=1)
+        self.normalized_features = self.TREND_EMA(**params) if self.strategy_name =='TREND_EMA' else(self.SharpeRev(**params) if self.strategy_name == 'SharpeRev' else self.MOM_BURST(**params))
 
         if self.strategy_name =='TREND_EMA':
             for name in self.Components:
@@ -117,6 +115,10 @@ class STRATEGY_REPO:
                 normalized_features_cmp = self.TREND_EMA_components(dt, **cmp_params)
                 idx = self.normalized_features.index
                 self.normalized_features = pd.concat([self.normalized_features, normalized_features_cmp.loc[idx]],axis=1)
+
+    #   setting regimes
+        regime = self.Regimer(self.normalized_features.index)
+        self.normalized_features = pd.concat([self.normalized_features, regime], axis=1)
 
     def TREND_EMA(self, window, lookback_1,lookback_2, normal_window, lags):
 
@@ -154,9 +156,8 @@ class STRATEGY_REPO:
 #       normalization the features
         normalized_features = self.Normalization(features, normal_window, True)
         normalized_features['dayofweek'] = normalized_features.index.dayofweek
-#       volatility Regime
-        VolatilityRegime = self.VolatilityRegime()
-        return normalized_features, VolatilityRegime.loc[normalized_features.index]
+
+        return normalized_features
 
     def TREND_EMA_components(self,dt,window, normal_window, lags,id_):
         features = pd.DataFrame()
@@ -218,7 +219,7 @@ class STRATEGY_REPO:
         features['spr_quan_dn'] = features['spr'] - features['quan_dn']
         features['sentiment'] = EMA - self.data['close']
         features['pct_change'] = pct_change
-        features['GAP'] = self.data['open'] / self.data['close'].shift(1)
+
 
         # adding lagged features
         if lags:
@@ -233,9 +234,7 @@ class STRATEGY_REPO:
         normalized_features = self.Normalization(features, normal_window, True)
         normalized_features['dayofweek'] = normalized_features.index.dayofweek
 
-        # volatility Regime
-        VolatilityRegime = self.VolatilityRegime()
-        return normalized_features, VolatilityRegime.loc[normalized_features.index]
+        return normalized_features
 
     def MOM_BURST(self,lookback,  normal_window, lags):
         # Initialization of variables
@@ -253,7 +252,6 @@ class STRATEGY_REPO:
         features['mom_burst_hh'] = v1 / v1.rolling(window=lookback).max().shift(1)
         features['mom_burst_ll'] = v1.rolling(window=lookback).min().shift(1) / v1
         features['rsi'] = rsi
-        features['GAP'] = self.data['open'] / self.data['close'].shift(1)
 
         for col in ['range_mean_vs_candle_range', 'mom_burst_hh', 'mom_burst_ll']:
             features[f'{col}_STD'] = features[col].ewm(span=lookback).std()
@@ -270,11 +268,14 @@ class STRATEGY_REPO:
         # normalization the features
         normalized_features = self.Normalization(features, normal_window, True)
         normalized_features['dayofweek'] = normalized_features.index.dayofweek
-        # volatility Regime
+
+        return normalized_features,
+
+    def Regimer(self, idx):
         VolatilityRegime = self.VolatilityRegime()
-        return normalized_features, VolatilityRegime.loc[normalized_features.index]
-
-
+        regime_input = VolatilityRegime.loc[idx]
+        states = pd.Series(self.regime_model_1.predict(regime_input),index=idx , name = 'Regime')
+        return states
 
 
 
