@@ -106,7 +106,7 @@ class STRATEGY_REPO:
 
     def generate_features(self):
         params = self.get_params
-        self.normalized_features = self.TREND_EMA(**params) if self.strategy_name =='TREND_EMA' else(self.SharpeRev(**params) if self.strategy_name == 'SharpeRev' else self.MOM_BURST(**params))
+        self.normalized_features,regime_input = self.TREND_EMA(**params) if self.strategy_name =='TREND_EMA' else(self.SharpeRev(**params) if self.strategy_name == 'SharpeRev' else self.MOM_BURST(**params))
 
         if self.strategy_name =='TREND_EMA':
             for name in self.Components:
@@ -117,7 +117,7 @@ class STRATEGY_REPO:
                 self.normalized_features = pd.concat([self.normalized_features, normalized_features_cmp.loc[idx]],axis=1)
 
     #   setting regimes
-        regime = self.Regimer(self.normalized_features.index)
+        regime = self.Regimer(regime_input)
         self.normalized_features = pd.concat([self.normalized_features, regime], axis=1)
 
     def TREND_EMA(self, window, lookback_1,lookback_2, normal_window, lags):
@@ -156,8 +156,8 @@ class STRATEGY_REPO:
 #       normalization the features
         normalized_features = self.Normalization(features, normal_window, True)
         normalized_features['dayofweek'] = normalized_features.index.dayofweek
-
-        return normalized_features
+        VolatilityRegime = self.VolatilityRegime()
+        return normalized_features, VolatilityRegime.loc[normalized_features.index]
 
     def TREND_EMA_components(self,dt,window, normal_window, lags,id_):
         features = pd.DataFrame()
@@ -195,7 +195,7 @@ class STRATEGY_REPO:
                     #       concatenate the feature and lag features
             features = pd.concat([features, lag_values], axis=1)
 
-        #       normalization the features
+        # normalization the features
         normalized_features = self.Normalization(features, normal_window, True)
         normalized_features.columns = [f"{col}_{id_}" for col in normalized_features.columns]
         return normalized_features
@@ -220,7 +220,6 @@ class STRATEGY_REPO:
         features['sentiment'] = EMA - self.data['close']
         features['pct_change'] = pct_change
 
-
         # adding lagged features
         if lags:
             lag_values = pd.DataFrame()
@@ -233,8 +232,9 @@ class STRATEGY_REPO:
         # normalization the features
         normalized_features = self.Normalization(features, normal_window, True)
         normalized_features['dayofweek'] = normalized_features.index.dayofweek
+        VolatilityRegime = self.VolatilityRegime()
 
-        return normalized_features
+        return normalized_features , VolatilityRegime.loc[normalized_features.index]
 
     def MOM_BURST(self,lookback,  normal_window, lags):
         # Initialization of variables
@@ -268,13 +268,13 @@ class STRATEGY_REPO:
         # normalization the features
         normalized_features = self.Normalization(features, normal_window, True)
         normalized_features['dayofweek'] = normalized_features.index.dayofweek
-
-        return normalized_features,
-
-    def Regimer(self, idx):
         VolatilityRegime = self.VolatilityRegime()
-        regime_input = VolatilityRegime.loc[idx]
-        states = pd.Series(self.regime_model_1.predict(regime_input),index=idx , name = 'Regime')
+
+        return normalized_features, VolatilityRegime.loc[normalized_features.index]
+
+    def Regimer(self ,regime_input):
+        # Volatility Regime
+        states = pd.Series(self.regime_model_1.predict(regime_input),index= regime_input.index , name = 'Regime')
         return states
 
 
