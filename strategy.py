@@ -14,8 +14,9 @@ class StrategyFactory(STRATEGY_REPO):
         self.expiry = expiry
         self.index = 'NIFTY' if self.symbol == 'NSE:NIFTY50-INDEX' else (
             'BANKNIFTY' if symbol == 'NSE:NIFTYBANK-INDEX' else 'FINNIFTY')
+
         self.strike_interval = {'NSE:NIFTYBANK-INDEX': 100, 'NSE:NIFTY50-INDEX': 50, 'NSE:FINNIFTY-INDEX': 50}
-        self.expiry_weekday = {'NSE:NIFTYBANK-INDEX':2, 'NSE:NIFTY50-INDEX': 3}
+
         # initializing the variables
         self.signal = 0
         self.spot = 0
@@ -96,8 +97,12 @@ class StrategyFactory(STRATEGY_REPO):
         self.scheduler.run_pending()
         self.Exit_position_on_real_time()
 
+    def IsExpiry(self):
+        expiry = datetime.strptime(self.expiry, '%d%b%y')
+        return datetime.now(self.time_zone).date() == expiry.date()
+
     def Exit_position_on_real_time(self):
-        if self.expiry_weekday[self.symbol] == datetime.now(self.time_zone).weekday():
+        if self.IsExpiry():
             if datetime.now(self.time_zone).time() > datetime.strptime('15:15:00', "%H:%M:%S").time():
                 if self.position:
                     self.squaring_of_all_position_AT_ONCE()
