@@ -35,14 +35,20 @@ def GetOpenPosition(strategy):
         records = Open_Pos.loc[is_open]
     return records
 
-def get_expiry(Indices):
+def get_expiry(indices):
     input_format = "%d-%b-%Y"
     output_format = "%d%b%y"
-    url = f'https://www.nseindia.com/api/option-chain-indices?symbol={Indices}'
-    headers = {'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36" }
-    print('making request')
-    print(requests.get(url,headers=headers))
-    records = requests.get(url,headers=headers).json()['records']
-    print('records' , records)
-    format_exp = [datetime.strptime(date, input_format).strftime(output_format).upper() for date in records['expiryDates']]
-    return format_exp
+    url = f'https://www.nseindia.com/api/option-chain-indices?symbol={indices}'
+    headers = {
+        "Accept": "*/*",
+        "Accept-Encoding": "gzip, deflate, br",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36",
+        "Connection": "keep-alive"
+    }
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        records = response.json()['records']
+        format_exp = [datetime.strptime(date, input_format).strftime(output_format).upper() for date in records['expiryDates']]
+        return format_exp
+    else:
+        return []  # or handle the error in an appropriate way
