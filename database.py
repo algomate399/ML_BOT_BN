@@ -46,6 +46,7 @@ def get_expiry(indices):
         "Connection": "keep-alive"
     }
     response = requests.get(url, headers=headers)
+    print('resp',response)
     if response.status_code == 200:
         records = response.json()['records']
         format_exp = [datetime.strptime(date, input_format).strftime(output_format).upper() for date in records['expiryDates']]
