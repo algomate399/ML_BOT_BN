@@ -10,9 +10,9 @@ from database import GetOpenPosition , get_expiry
 
 class StrategyFactory(STRATEGY_REPO):
 
-    def __init__(self, name, mode,symbol,Components,interval,expiry):
+    def __init__(self, name, mode,symbol,Components,interval):
         super().__init__(name,symbol,Components,interval)
-        self.expiry = expiry
+        self.expiry = None
         self.index = 'NIFTY' if self.symbol == 'NSE:NIFTY50-INDEX' else (
             'BANKNIFTY' if symbol == 'NSE:NIFTYBANK-INDEX' else 'FINNIFTY')
 
