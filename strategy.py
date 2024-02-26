@@ -91,7 +91,7 @@ class StrategyFactory(STRATEGY_REPO):
             else:
                 if not self.position and self.trade_flag and not self.processed_flag and not self.scheduler.jobs:
                     self.signal = self.get_signal()
-                    print('signal' , self.signal)
+                    print(self.strategy_name,self.signal)
                     if self.signal:
                         self.scheduler.every(5).seconds.do(self.Open_position)
                     self.processed_flag = True
