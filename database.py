@@ -40,6 +40,8 @@ def get_expiry(Indices):
     output_format = "%d%b%y"
     url = f'https://www.nseindia.com/api/option-chain-indices?symbol={Indices}'
     headers = {'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36" }
+    print('making request')
     records = requests.get(url,headers=headers).json()['records']
+    print('records' , records)
     format_exp = [datetime.strptime(date, input_format).strftime(output_format).upper() for date in records['expiryDates']]
     return format_exp
