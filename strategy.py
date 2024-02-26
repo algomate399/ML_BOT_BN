@@ -85,7 +85,9 @@ class StrategyFactory(STRATEGY_REPO):
         if self.Is_Valid_time():
             if not self.overnight_flag:
                 self.Validate_OvernightPosition()
+                print('getting expiry')
                 self.expiry = get_expiry(self.index)
+                print(self.expiry)
                 if not self.scheduler.jobs:
                     self.scheduler.every(5).seconds.do(self.OrderManger.Update_OpenPosition)
             else:
