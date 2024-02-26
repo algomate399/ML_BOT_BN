@@ -5,7 +5,7 @@ from OrderParam import OrderParam
 import schedule
 from datetime import datetime
 from strategy_repo import STRATEGY_REPO
-from database import GetOpenPosition , get_expiry
+from database import GetOpenPosition , NSE_SESSION
 
 
 class StrategyFactory(STRATEGY_REPO):
@@ -13,6 +13,7 @@ class StrategyFactory(STRATEGY_REPO):
     def __init__(self, name, mode,symbol,Components,interval):
         super().__init__(name,symbol,Components,interval)
         self.expiry = None
+        self.nse = NSE_SESSION()
         self.index = 'NIFTY' if self.symbol == 'NSE:NIFTY50-INDEX' else (
             'BANKNIFTY' if symbol == 'NSE:NIFTYBANK-INDEX' else 'FINNIFTY')
 
@@ -84,17 +85,13 @@ class StrategyFactory(STRATEGY_REPO):
         # updating the overnight position
         if self.Is_Valid_time():
             if not self.overnight_flag:
-                print('validation')
                 self.Validate_OvernightPosition()
-                print('getting expiry')
-                self.expiry = get_expiry(self.index)
-                print(self.expiry)
+                self.expiry = self.nse.GetExpiry(self.index)
                 if not self.scheduler.jobs:
                     self.scheduler.every(5).seconds.do(self.OrderManger.Update_OpenPosition)
             else:
                 if not self.position and self.trade_flag and not self.processed_flag and not self.scheduler.jobs:
                     self.signal = self.get_signal()
-                    print(self.strategy_name,self.signal)
                     if self.signal:
                         self.scheduler.every(5).seconds.do(self.Open_position)
                     self.processed_flag = True
