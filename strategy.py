@@ -84,6 +84,7 @@ class StrategyFactory(STRATEGY_REPO):
         # updating the overnight position
         if self.Is_Valid_time():
             if not self.overnight_flag:
+                print('validation')
                 self.Validate_OvernightPosition()
                 print('getting expiry')
                 self.expiry = get_expiry(self.index)
