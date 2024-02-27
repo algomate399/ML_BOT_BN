@@ -5,7 +5,7 @@ from OrderParam import OrderParam
 import schedule
 from datetime import datetime
 from strategy_repo import STRATEGY_REPO
-from database import GetOpenPosition , NSE_SESSION
+from database import GetOpenPosition,get_expiry
 
 
 class StrategyFactory(STRATEGY_REPO):
@@ -13,7 +13,6 @@ class StrategyFactory(STRATEGY_REPO):
     def __init__(self, name, mode,symbol,Components,interval):
         super().__init__(name,symbol,Components,interval)
         self.expiry = None
-        self.nse = NSE_SESSION()
         self.index = 'NIFTY' if self.symbol == 'NSE:NIFTY50-INDEX' else (
             'BANKNIFTY' if symbol == 'NSE:NIFTYBANK-INDEX' else 'FINNIFTY')
 
@@ -31,7 +30,7 @@ class StrategyFactory(STRATEGY_REPO):
         OrderMng.LIVE_FEED = self.LIVE_FEED
         self.OrderManger = OrderMng(mode, name,self)
         self.processed_flag = False
-        self.expiry = self.nse.GetExpiry(self.index)
+        self.expiry = get_expiry(self.index)
 
 
     def Is_Valid_time(self):
