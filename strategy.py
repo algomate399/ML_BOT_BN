@@ -31,6 +31,8 @@ class StrategyFactory(STRATEGY_REPO):
         OrderMng.LIVE_FEED = self.LIVE_FEED
         self.OrderManger = OrderMng(mode, name,self)
         self.processed_flag = False
+        self.expiry = self.nse.GetExpiry(self.index)
+
 
     def Is_Valid_time(self):
         valid_time = False
@@ -86,7 +88,6 @@ class StrategyFactory(STRATEGY_REPO):
         if self.Is_Valid_time():
             if not self.overnight_flag:
                 self.Validate_OvernightPosition()
-                self.expiry = self.nse.GetExpiry(self.index)
                 if not self.scheduler.jobs:
                     self.scheduler.every(5).seconds.do(self.OrderManger.Update_OpenPosition)
             else:
