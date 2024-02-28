@@ -6,9 +6,14 @@ import numpy as np
 def request_position():
     records = pd.DataFrame()
     url = 'https://algotrade.pythonanywhere.com/get_position'
-    response = requests.get(url)
-    if response.json() != 'no records':
-        records = pd.DataFrame.from_records(response.json())
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            if response.json() != 'no records':
+                records = pd.DataFrame.from_records(response.json())
+    except requests.exceptions.RequestException as e:
+        print(f'Error:{e}')
+
     return records
 
 def UpdatePositionBook(Date, entrytime, exittime ,strategy_name, Transtype, Instrument, Signal, NetQty, NAV, POSITION):
