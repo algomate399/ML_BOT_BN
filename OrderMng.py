@@ -35,6 +35,7 @@ class OrderMng:
                 self.entry_time[instrument] = row['entrytime']
                 self.Transtype[instrument] = row['Transtype']
                 self.Signal[instrument] = row['Signal']
+
                 if row['Transtype'] == 'BUY':
                     self.net_qty[instrument] += abs(row['NetQty'])
                     self.nav[instrument] += abs((row['NAV']))
@@ -62,11 +63,6 @@ class OrderMng:
 
     def Live_MTM(self):
         mtm = sum([(self.LIVE_FEED.get_ltp(ins) * self.net_qty[ins]) - self.nav[ins] for ins in self.nav])
-        if self.StrategyFactory_Obj.target:
-            if mtm >= self.StrategyFactory_Obj.target:
-                self.StrategyFactory_Obj.squaring_of_all_position_AT_ONCE()
-                self.StrategyFactory_Obj.processed_flag = False
-
         return self.CumMtm+mtm
 
     def Add_position(self,Instrument,Transtype, Qty,signal):
@@ -96,6 +92,7 @@ class OrderMng:
             self.nav[Instrument] -= (price*Qty)
             self.Transtype[Instrument] = Transtype
             self.Signal[Instrument] = signal
+
 
         if success:
             if Instrument not in self.entry_time:
@@ -146,7 +143,7 @@ class OrderMng:
         Transtype = self.Transtype[instrument]
 
         UpdatePositionBook(dt, entry_time, exit_time, self.strategy_name,
-                           Transtype, instrument, Signal, NetQty, NAV,
+                           Transtype, instrument,Signal, NetQty, NAV,
                            POSITION)
 
     def Initialize_Variables(self, instrument):

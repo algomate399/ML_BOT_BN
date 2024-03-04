@@ -58,6 +58,7 @@ class BROKER_API:
 
         def feed_data(message):  # Socket feed data will receive in this callback function
             feed_message = json.loads(message)
+
             if 'lp' in feed_message:
                 self.ltp[self.token[str(feed_message['tk'])]] = float(feed_message['lp'])
 
