@@ -16,7 +16,7 @@ def request_position():
 
     return records
 
-def UpdatePositionBook(Date, entrytime, exittime ,strategy_name, Transtype, Instrument, Signal, NetQty, NAV, POSITION):
+def UpdatePositionBook(Date, entrytime, exittime ,strategy_name, Transtype, Instrument,Signal, NetQty, NAV, POSITION):
     url = 'https://algotrade.pythonanywhere.com/append_position'
 
     # creating records

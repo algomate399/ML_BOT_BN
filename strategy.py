@@ -6,6 +6,8 @@ import schedule
 from datetime import datetime
 from strategy_repo import STRATEGY_REPO
 from database import GetOpenPosition,get_expiry
+import re
+import numpy as np
 
 
 class StrategyFactory(STRATEGY_REPO):
@@ -21,7 +23,8 @@ class StrategyFactory(STRATEGY_REPO):
         # initializing the variables
         self.signal = 0
         self.spot = 0
-        self.target = 0
+        self.UPPER_CIR = 0
+        self.LOWER_CIR = 0
         self.overnight_flag = False
         self.trade_flag = True
         self.ticker_space = pd.DataFrame()
@@ -35,7 +38,7 @@ class StrategyFactory(STRATEGY_REPO):
 
     def Is_Valid_time(self):
         valid_time = False
-        if datetime.now(self.time_zone).time()>datetime.strptime('09:15:00', "%H:%M:%S").time():
+        if datetime.now(self.time_zone).time() > datetime.strptime('09:15:00', "%H:%M:%S").time():
             valid_time = True
         return valid_time
 
@@ -130,7 +133,9 @@ class StrategyFactory(STRATEGY_REPO):
 
         if success:
             self.position = self.position if self.OrderManger.net_qty else 0
-            self.target = 0 if not self.position else self.target
+            if not self.position:
+                self.LOWER_CIR = 0
+                self.UPPER_CIR = 0
 
     def Validate_OvernightPosition(self):
         if self.position:
@@ -138,8 +143,28 @@ class StrategyFactory(STRATEGY_REPO):
             self.overnight_flag = True
 
     def MonitorTrade(self):
-        if self.position and not self.target:
-            OpenPos = GetOpenPosition(self.strategy_name)
-            max_loss = abs(OpenPos['NAV']).diff().iloc[-1]
-            self.target = 2.14 * abs(max_loss)
+        if self.position:
+            if not self.UPPER_CIR and not self.LOWER_CIR:
+                strike = []
+                OpenPos = GetOpenPosition(self.strategy_name)
+                signal = list(set(OpenPos['Signal'].values))[-1]
+                for instrument in OpenPos['Instrument'].values:
+                    strike.append(self.Get_Strike(instrument))
+                # only valid for bull call or put spread strategy
+                range_ = np.diff(strike)[0]
+                self.UPPER_CIR = np.max(strike) + abs(range_) if signal < 0 else np.max(strike)
+                self.LOWER_CIR = np.min(strike) - abs(range_) if signal > 0 else np.min(strike)
+            else:
+                spot = self.LIVE_FEED.get_ltp(self.symbol)
+                if (self.UPPER_CIR < spot) | (self.LOWER_CIR > spot):
+                    self.squaring_of_all_position_AT_ONCE()
+                    self.processed_flag = False
+
+    def Get_Strike(self, instrument):
+        ex = [e for e in self.expiry if e in instrument][-1]
+        stk = instrument.replace(self.index, '').replace(ex, '')
+        strike = re.findall('[0-9]+', stk)[0]
+        # opt = re.findall('[A-Za-z]+', stk)[0]
+        return int(strike)
+
 
