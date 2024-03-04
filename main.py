@@ -72,7 +72,7 @@ def connect():
         StrategyFactory.time_zone = pytz.timezone('Asia/Kolkata')
 
         # selecting strategy which is selected with checkbox
-        TREND_EMA_components = ['NSE:NIFTY50-INDEX', 'NSE:ICICIBANK-EQ', 'NSE:HDFCBANK-EQ', 'NSE:AXISBANK-EQ','NSE:SBIN-EQ']
+        TREND_EMA_components = ['NSE:NIFTY50-INDEX']
 
         STRATEGY = {'TREND_EMA': {'mode': 'Simulator', 'ticker': 'NSE:NIFTYBANK-INDEX','Components':TREND_EMA_components, 'interval': 'D'},
                     'SharpeRev': {'mode': 'Simulator', 'ticker':'NSE:NIFTYBANK-INDEX','Components': None,'interval': 'D'},

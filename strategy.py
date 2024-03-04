@@ -104,7 +104,7 @@ class StrategyFactory(STRATEGY_REPO):
         # checking the scheduled task
         self.scheduler.run_pending()
         self.Exit_position_on_real_time()
-        
+
 
     def IsExpiry(self):
         expiry = datetime.strptime(self.expiry[0], '%d%b%y')
