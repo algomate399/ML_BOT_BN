@@ -157,7 +157,7 @@ class StrategyFactory(STRATEGY_REPO):
                 self.LOWER_CIR = np.min(strike) - abs(range_) if signal > 0 else np.min(strike)
             else:
                 spot = self.LIVE_FEED.get_ltp(self.symbol)
-                if (self.UPPER_CIR < spot) | (self.LOWER_CIR > spot):
+                if (self.UPPER_CIR < spot and self.position > 0) | (self.LOWER_CIR > spot and self.position < 0):
                     self.squaring_of_all_position_AT_ONCE()
                     self.processed_flag = False
 
