@@ -18,7 +18,7 @@ class OrderMng:
         self.entry_time = {}
         self.exit_time = {}
         self.nav = {}
-        self.spread = None
+        self.spread = {}
         self.Signal = {}
         self.net_qty = {}
         self.CumMtm = 0
