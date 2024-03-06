@@ -18,6 +18,7 @@ class OrderMng:
         self.entry_time = {}
         self.exit_time = {}
         self.nav = {}
+        self.spread = None
         self.Signal = {}
         self.net_qty = {}
         self.CumMtm = 0
@@ -35,6 +36,7 @@ class OrderMng:
                 self.entry_time[instrument] = row['entrytime']
                 self.Transtype[instrument] = row['Transtype']
                 self.Signal[instrument] = row['Signal']
+                self.spread = row['spread']
 
                 if row['Transtype'] == 'BUY':
                     self.net_qty[instrument] += abs(row['NetQty'])
@@ -65,7 +67,7 @@ class OrderMng:
         mtm = sum([(self.LIVE_FEED.get_ltp(ins) * self.net_qty[ins]) - self.nav[ins] for ins in self.nav])
         return self.CumMtm+mtm
 
-    def Add_position(self,Instrument,Transtype, Qty,signal):
+    def Add_position(self,Instrument,Transtype, Qty,signal,spread):
         price = 0
         success = False
 
@@ -86,12 +88,14 @@ class OrderMng:
             self.nav[Instrument] += (price*Qty)
             self.Transtype[Instrument] = Transtype
             self.Signal[Instrument] = signal
+            self.spread[Instrument] = spread
 
         elif Transtype == 'SELL' and success:
             self.net_qty[Instrument] -= Qty
             self.nav[Instrument] -= (price*Qty)
             self.Transtype[Instrument] = Transtype
             self.Signal[Instrument] = signal
+            self.spread[Instrument] = spread
 
 
         if success:
@@ -141,8 +145,9 @@ class OrderMng:
         NetQty = self.net_qty[instrument]
         Signal = self.Signal[instrument]
         Transtype = self.Transtype[instrument]
+        spread = self.spread[instrument]
 
-        UpdatePositionBook(dt, entry_time, exit_time, self.strategy_name,
+        UpdatePositionBook(dt, entry_time, exit_time, self.strategy_name,spread,
                            Transtype, instrument,Signal, NetQty, NAV,
                            POSITION)
 
