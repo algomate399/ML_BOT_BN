@@ -143,7 +143,7 @@ class StrategyFactory(STRATEGY_REPO):
             self.overnight_flag = True
 
     def MonitorTrade(self):
-        if self.position:
+        if self.position and not self.expiry:
             if not self.UPPER_CIR and not self.LOWER_CIR:
                 strike = []
                 OpenPos = GetOpenPosition(self.strategy_name)
@@ -152,6 +152,7 @@ class StrategyFactory(STRATEGY_REPO):
                     strike.append(self.Get_Strike(instrument))
                 # only valid for bull call or put spread strategy
                 range_ = np.diff(strike)[0]
+                # debit spread
                 self.UPPER_CIR = np.max(strike) + abs(range_) if signal < 0 else np.max(strike)
                 self.LOWER_CIR = np.min(strike) - abs(range_) if signal > 0 else np.min(strike)
             else:
