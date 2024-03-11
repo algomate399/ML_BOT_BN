@@ -60,7 +60,7 @@ def connect():
         BROKER_APP.BROKER_WEBSOCKET_INT()
 
         # TICKER and interval  used  in strategies
-        TICKER_UNDER_STRATEGY = {'NSE:NIFTYBANK-INDEX':'D','NSE:NIFTY50-INDEX':'D','NSE:ICICIBANK-EQ':'D', 'NSE:HDFCBANK-EQ':'D', 'NSE:AXISBANK-EQ':'D','NSE:SBIN-EQ':'D'}
+        TICKER_UNDER_STRATEGY = {'NSE:NIFTYBANK-INDEX':'D','NSE:NIFTY50-INDEX':'D'}
         TICKER_.BROKER_OBJ = HIST_APP.BROKER_APP
         TICK = TICKER_(TICKER_UNDER_STRATEGY)
         BROKER_API.TICKER_OBJ = TICK
@@ -77,6 +77,7 @@ def connect():
         STRATEGY = {'TREND_EMA': {'mode': 'Simulator', 'ticker': 'NSE:NIFTYBANK-INDEX','Components':TREND_EMA_components, 'interval': 'D'},
                     'SharpeRev': {'mode': 'Simulator', 'ticker':'NSE:NIFTYBANK-INDEX','Components': None,'interval': 'D'},
                     'MOM_BURST': {'mode': 'Simulator', 'ticker':'NSE:NIFTYBANK-INDEX', 'Components':None,'interval': 'D'},
+                    'Volatility_BRK': {'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'Components': None, 'interval': 'D'}
                     }
 
         json = request.get_json()
