@@ -149,6 +149,14 @@
 
          </tr>
 
+                <tr>
+            <td id="strategy_Volatility_BRK">N/A</td>
+            <td id="status_Volatility_BRK">N/A</td>
+            <td id="position_Volatility_BRK">N/A</td>
+            <td id="mtm_Volatility_BRK">N/A</td>
+
+         </tr>
+
     </table>
       <table border="2">
         <tr>
@@ -171,6 +179,11 @@
         <input type="checkbox" name="MOM_BURST" value="MOM_BURST" id="MOM_BURST"> MOM_BURST
       </label>
 
+        <label for=Volatility_BRK>
+        <input type="checkbox" name="Volatility_BRK" value="Volatility_BRK" id="Volatility_BRK"> Volatility_BRK
+      </label>
+
+
       <!-- Add more checkboxes for each strategy you have -->
   </div>
    <div class="date-selector">
@@ -192,6 +205,8 @@
             <option value="TREND_EMA">TREND_EMA</option>
             <option value="SharpeRev">SharpeRev</option>
             <option value="MOM_BURST">MOM_BURST</option>
+            <option value="Volatility_BRK">Volatility_BRK</option>
+
 
         </select>
         <button type="submit">SQUARE-OFF</button>
@@ -219,6 +234,14 @@
             $('#status_MOM_BURST').text(data['MOM_BURST'].STATUS);
             $('#position_MOM_BURST').text(data['MOM_BURST'].POSITION);
             $('#mtm_MOM_BURST').text(data['MOM_BURST'].MTM);
+
+            $('#strategy_Volatility_BRK').text(data['Volatility_BRK'].STRATEGY_NAME);
+            $('#status_Volatility_BRK').text(data['Volatility_BRK'].STATUS);
+            $('#position_Volatility_BRK').text(data['Volatility_BRK'].POSITION);
+            $('#mtm_Volatility_BRK').text(data['Volatility_BRK'].MTM);
+
+
+
             $('#totalMTM').text(data['TOTAL'].TOTAL_MTM);
         });
     }
@@ -270,6 +293,7 @@
         const isTREND_EMASelected = document.querySelector('input[name="TREND_EMA"]').checked;
         const isSharpRevSelected = document.querySelector('input[name="SharpeRev"]').checked;
         const isMOM_BURSTSelected = document.querySelector('input[name="MOM_BURST"]').checked;
+        const isVolatility_BRKSelected = document.querySelector('input[name="Volatility_BRK"]').checked;
 
 
         // Create the selected strategy
@@ -277,7 +301,8 @@
             'TREND_EMA': isTREND_EMASelected,
             'SharpeRev': isSharpRevSelected,
             'MOM_BURST':isMOM_BURSTSelected,
-        };
+            'Volatility_BRK':isVolatility_BRKSelected,
+            };
 
         // Make a POST request to /on_connect with the selected_strategy
         fetch('/on_connect', {
