@@ -284,7 +284,7 @@ class STRATEGY_REPO:
 
         return normalized_features, VolatilityRegime.loc[normalized_features.index]
 
-    def Volatility_BRK(self, lookback, band_width, normal_window, lags, split_ratio_1):
+    def Volatility_BRK(self, lookback, band_width, normal_window, lags):
         #   initialization the variables
         features = pd.DataFrame()
 
