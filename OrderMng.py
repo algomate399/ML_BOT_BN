@@ -14,7 +14,7 @@ class OrderMng:
         self.mode = mode
         self.strategy_name = name
         self.time_zone = pytz.timezone('Asia/kolkata')
-        self.date = {}
+        self.Trans_date = {}
         self.entry_time = {}
         self.exit_time = {}
         self.nav = {}
@@ -32,7 +32,7 @@ class OrderMng:
             for index, row in OpenPos.iterrows():
                 instrument = row['Instrument']
                 self.Initialize_Variables(instrument)
-                self.date[instrument] = row['Date']
+                self.Trans_date[instrument] = row['Date']
                 self.entry_time[instrument] = row['entrytime']
                 self.Transtype[instrument] = row['Transtype']
                 self.Signal[instrument] = row['Signal']
@@ -97,11 +97,10 @@ class OrderMng:
             self.Signal[Instrument] = signal
             self.spread[Instrument] = spread
 
-
         if success:
             if Instrument not in self.entry_time:
                 self.entry_time[Instrument] = datetime.now(self.time_zone).time()
-                self.date[Instrument] = datetime.now(self.time_zone).date()
+                self.Trans_date[Instrument] = datetime.now(self.time_zone).date()
 
             if self.mode == 'Simulator':
                 self.UpdatePosition(Instrument)
@@ -130,17 +129,16 @@ class OrderMng:
             self.UpdatePosition(Instrument)
 
         if success and self.net_qty[Instrument] == 0:
-            self.date[Instrument] = datetime.now(self.time_zone).date()
             self.CumMtm += (-self.nav[Instrument])
             self.refresh_variable(Instrument)
 
         return success
 
     def UpdatePosition(self, instrument):
-        dt = self.date[instrument]
+        dt = self.Trans_date[instrument]
         entry_time = self.entry_time[instrument]
         POSITION = 'OPEN' if self.net_qty[instrument] != 0 else 'CLOSED'
-        exit_time = datetime.now(self.time_zone).time() if POSITION == 'CLOSED' else np.nan
+        exit_time = datetime.now(self.time_zone) if POSITION == 'CLOSED' else np.nan
         NAV = -1 * self.nav[instrument] if POSITION == 'CLOSED' else self.nav[instrument]
         NetQty = self.net_qty[instrument]
         Signal = self.Signal[instrument]
@@ -166,6 +164,6 @@ class OrderMng:
         self.entry_time.pop(instrument, None)
         self.exit_time.pop(instrument, None)
         self.Signal.pop(instrument, None)
-        self.date.pop(instrument, None)
+        self.Trans_date.pop(instrument, None)
 
 
