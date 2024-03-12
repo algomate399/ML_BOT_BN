@@ -36,7 +36,7 @@ class OrderMng:
                 self.entry_time[instrument] = row['entrytime']
                 self.Transtype[instrument] = row['Transtype']
                 self.Signal[instrument] = row['Signal']
-                self.spread = row['spread']
+                self.spread[instrument] = row['spread']
 
                 if row['Transtype'] == 'BUY':
                     self.net_qty[instrument] += abs(row['NetQty'])
