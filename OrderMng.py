@@ -14,7 +14,6 @@ class OrderMng:
         self.mode = mode
         self.strategy_name = name
         self.time_zone = pytz.timezone('Asia/kolkata')
-        self.Trans_date = {}
         self.entry_time = {}
         self.exit_time = {}
         self.nav = {}
@@ -32,7 +31,6 @@ class OrderMng:
             for index, row in OpenPos.iterrows():
                 instrument = row['Instrument']
                 self.Initialize_Variables(instrument)
-                self.Trans_date[instrument] = row['Date']
                 self.entry_time[instrument] = row['entrytime']
                 self.Transtype[instrument] = row['Transtype']
                 self.Signal[instrument] = row['Signal']
@@ -99,8 +97,7 @@ class OrderMng:
 
         if success:
             if Instrument not in self.entry_time:
-                self.entry_time[Instrument] = datetime.now(self.time_zone).time()
-                self.Trans_date[Instrument] = datetime.now(self.time_zone).date()
+                self.entry_time[Instrument] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
             if self.mode == 'Simulator':
                 self.UpdatePosition(Instrument)
@@ -135,10 +132,10 @@ class OrderMng:
         return success
 
     def UpdatePosition(self, instrument):
-        dt = self.Trans_date[instrument]
+        dt = datetime.now(self.time_zone).date()
         entry_time = self.entry_time[instrument]
         POSITION = 'OPEN' if self.net_qty[instrument] != 0 else 'CLOSED'
-        exit_time = datetime.now(self.time_zone) if POSITION == 'CLOSED' else np.nan
+        exit_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S') if POSITION == 'CLOSED' else np.nan
         NAV = -1 * self.nav[instrument] if POSITION == 'CLOSED' else self.nav[instrument]
         NetQty = self.net_qty[instrument]
         Signal = self.Signal[instrument]
@@ -164,6 +161,6 @@ class OrderMng:
         self.entry_time.pop(instrument, None)
         self.exit_time.pop(instrument, None)
         self.Signal.pop(instrument, None)
-        self.Trans_date.pop(instrument, None)
+
 
 

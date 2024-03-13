@@ -7,18 +7,17 @@ def OrderParam(strategy_name, signal, index, is_expiry=False):
             if is_expiry:
                 # credit spread
                 p1 = {'opt': 'PE', 'step': -8, 'transtype': 'BUY', 'Qty': QTY, 'expiry': 0 , 'spread':'CREDIT'}
-                p2 = {'opt': 'PE', 'step': -5, 'transtype': 'SELL', 'Qty': QTY, 'expiry': 0 , 'spread':'CREDIT'}
+                p2 = {'opt': 'PE', 'step': -4, 'transtype': 'SELL', 'Qty': QTY, 'expiry': 0 , 'spread':'CREDIT'}
             else:
                 # debit spread
                 p1 = {'opt': 'CE', 'step': 0, 'transtype': 'BUY', 'Qty': QTY, 'expiry': 0 , 'spread':'DEBIT'}
                 p2 = {'opt': 'CE', 'step': 4, 'transtype': 'SELL', 'Qty': QTY, 'expiry': 0 , 'spread':'DEBIT'}
 
-
         elif signal == -1:
             if is_expiry:
                 # credit spread
                 p1 = {'opt': 'CE', 'step': 8, 'transtype': 'BUY', 'Qty': QTY, 'expiry': 0 , 'spread':'CREDIT'}
-                p2 = {'opt': 'CE', 'step': 5, 'transtype': 'SELL', 'Qty': QTY, 'expiry': 0 ,'spread':'CREDIT'}
+                p2 = {'opt': 'CE', 'step': 4, 'transtype': 'SELL', 'Qty': QTY, 'expiry': 0 ,'spread':'CREDIT'}
             else:
                 # debit spread
                 p1 = {'opt': 'PE', 'step': 0, 'transtype': 'BUY', 'Qty': QTY, 'expiry': 0, 'spread':'DEBIT'}
@@ -30,18 +29,17 @@ def OrderParam(strategy_name, signal, index, is_expiry=False):
             if is_expiry:
                 # credit spread
                 p1 = {'opt': 'PE', 'step': -8, 'transtype': 'BUY', 'Qty': QTY, 'expiry': 0 , 'spread':'CREDIT'}
-                p2 = {'opt': 'PE', 'step': -5, 'transtype': 'SELL', 'Qty': QTY, 'expiry': 0 , 'spread':'CREDIT'}
+                p2 = {'opt': 'PE', 'step': -4, 'transtype': 'SELL', 'Qty': QTY, 'expiry': 0 , 'spread':'CREDIT'}
             else:
                 # debit spread
                 p1 = {'opt': 'CE', 'step': 0, 'transtype': 'BUY', 'Qty': QTY, 'expiry': 0 , 'spread':'DEBIT'}
                 p2 = {'opt': 'CE', 'step': 4, 'transtype': 'SELL', 'Qty': QTY, 'expiry': 0 , 'spread':'DEBIT'}
 
-
         elif signal == -1:
             if is_expiry:
                 # credit spread
                 p1 = {'opt': 'CE', 'step': 8, 'transtype': 'BUY', 'Qty': QTY, 'expiry': 0 , 'spread':'CREDIT'}
-                p2 = {'opt': 'CE', 'step': 5, 'transtype': 'SELL', 'Qty': QTY, 'expiry': 0 ,'spread':'CREDIT'}
+                p2 = {'opt': 'CE', 'step': 4, 'transtype': 'SELL', 'Qty': QTY, 'expiry': 0 ,'spread':'CREDIT'}
             else:
                 # debit spread
                 p1 = {'opt': 'PE', 'step': 0, 'transtype': 'BUY', 'Qty': QTY, 'expiry': 0, 'spread':'DEBIT'}
@@ -53,7 +51,7 @@ def OrderParam(strategy_name, signal, index, is_expiry=False):
             if is_expiry:
                 # credit spread
                 p1 = {'opt': 'PE', 'step': -8, 'transtype': 'BUY', 'Qty': QTY, 'expiry': 0 , 'spread':'CREDIT'}
-                p2 = {'opt': 'PE', 'step': -5, 'transtype': 'SELL', 'Qty': QTY, 'expiry': 0 , 'spread':'CREDIT'}
+                p2 = {'opt': 'PE', 'step': -4, 'transtype': 'SELL', 'Qty': QTY, 'expiry': 0 , 'spread':'CREDIT'}
             else:
                 # debit spread
                 p1 = {'opt': 'CE', 'step': 0, 'transtype': 'BUY', 'Qty': QTY, 'expiry': 0 , 'spread':'DEBIT'}
@@ -63,7 +61,7 @@ def OrderParam(strategy_name, signal, index, is_expiry=False):
             if is_expiry:
                 # credit spread
                 p1 = {'opt': 'CE', 'step': 8, 'transtype': 'BUY', 'Qty': QTY, 'expiry': 0 , 'spread':'CREDIT'}
-                p2 = {'opt': 'CE', 'step': 5, 'transtype': 'SELL', 'Qty': QTY, 'expiry': 0 ,'spread':'CREDIT'}
+                p2 = {'opt': 'CE', 'step': 4, 'transtype': 'SELL', 'Qty': QTY, 'expiry': 0 ,'spread':'CREDIT'}
             else:
                 # debit spread
                 p1 = {'opt': 'PE', 'step': 0, 'transtype': 'BUY', 'Qty': QTY, 'expiry': 0, 'spread':'DEBIT'}
@@ -75,7 +73,7 @@ def OrderParam(strategy_name, signal, index, is_expiry=False):
             if is_expiry:
                 # credit spread
                 p1 = {'opt': 'PE', 'step': -8, 'transtype': 'BUY', 'Qty': QTY, 'expiry': 0, 'spread': 'CREDIT'}
-                p2 = {'opt': 'PE', 'step': -5, 'transtype': 'SELL', 'Qty': QTY, 'expiry': 0, 'spread': 'CREDIT'}
+                p2 = {'opt': 'PE', 'step': -4, 'transtype': 'SELL', 'Qty': QTY, 'expiry': 0, 'spread': 'CREDIT'}
             else:
                 # debit spread
                 p1 = {'opt': 'CE', 'step': 0, 'transtype': 'BUY', 'Qty': QTY, 'expiry': 0, 'spread': 'DEBIT'}
@@ -85,10 +83,10 @@ def OrderParam(strategy_name, signal, index, is_expiry=False):
             if is_expiry:
                 # credit spread
                 p1 = {'opt': 'CE', 'step': 8, 'transtype': 'BUY', 'Qty': QTY, 'expiry': 0, 'spread': 'CREDIT'}
-                p2 = {'opt': 'CE', 'step': 5, 'transtype': 'SELL', 'Qty': QTY, 'expiry': 0, 'spread': 'CREDIT'}
+                p2 = {'opt': 'CE', 'step': 4, 'transtype': 'SELL', 'Qty': QTY, 'expiry': 0, 'spread': 'CREDIT'}
             else:
                 # debit spread
                 p1 = {'opt': 'PE', 'step': 0, 'transtype': 'BUY', 'Qty': QTY, 'expiry': 0, 'spread': 'DEBIT'}
                 p2 = {'opt': 'PE', 'step': -4, 'transtype': 'SELL', 'Qty': QTY, 'expiry': 0, 'spread': 'DEBIT'}
 
-    return {'p1': p1, 'p2': p2 }
+    return {'p1': p1, 'p2': p2}

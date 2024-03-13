@@ -141,7 +141,7 @@ class StrategyFactory(STRATEGY_REPO):
             self.overnight_flag = True
 
     def MonitorTrade(self):
-        if self.position :
+        if self.position:
             if not self.ACT_CIR:
                 strike = []
                 OpenPos = GetOpenPosition(self.strategy_name)
@@ -154,7 +154,7 @@ class StrategyFactory(STRATEGY_REPO):
                     range_ = 100
                     self.ACT_CIR = np.max(strike) - range_ if signal > 0 else np.min(strike) + range_
                 elif self.spr == 'CREDIT':
-                    range_ = 200
+                    range_ = 100
                     self.ACT_CIR = np.min(strike) + range_ if signal > 0 else np.max(strike)-range_
 
             else:
