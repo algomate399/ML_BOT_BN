@@ -27,9 +27,9 @@ class HIST_BROKER_():
 
     def login(self):
 
-        redirect_uri = "https://127.0.0.1:5000/"
-        self.client_id='IC8PF0KRVY-100'
-        secret_key = 'KV1T805HV4'
+        redirect_uri = "https://www.google.com/"
+        self.client_id='GBF61JC6AF-100'
+        secret_key = '03HZE67VQN'
         FY_ID = "XT00158"
         TOTP_KEY = "5MI36QR765HXYCG2JMW5OE5SGPEQUBLC"
         PIN = "2005"
