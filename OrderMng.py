@@ -97,7 +97,7 @@ class OrderMng:
 
         if success:
             if Instrument not in self.entry_time:
-                self.entry_time[Instrument] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                self.entry_time[Instrument] = datetime.now(self.time_zone).strftime('%Y-%m-%d %H:%M:%S')
 
             if self.mode == 'Simulator':
                 self.UpdatePosition(Instrument)
@@ -135,7 +135,7 @@ class OrderMng:
         dt = datetime.now(self.time_zone).date()
         entry_time = self.entry_time[instrument]
         POSITION = 'OPEN' if self.net_qty[instrument] != 0 else 'CLOSED'
-        exit_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S') if POSITION == 'CLOSED' else np.nan
+        exit_time = datetime.now(self.time_zone).strftime('%Y-%m-%d %H:%M:%S') if POSITION == 'CLOSED' else np.nan
         NAV = -1 * self.nav[instrument] if POSITION == 'CLOSED' else self.nav[instrument]
         NetQty = self.net_qty[instrument]
         Signal = self.Signal[instrument]
