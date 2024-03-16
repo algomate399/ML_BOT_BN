@@ -76,7 +76,6 @@ def connect():
 
         STRATEGY = {'TREND_EMA': {'mode': 'Simulator', 'ticker': 'NSE:NIFTYBANK-INDEX','Components':TREND_EMA_components, 'interval': 'D'},
                     'SharpeRev': {'mode': 'Simulator', 'ticker':'NSE:NIFTYBANK-INDEX','Components': None,'interval': 'D'},
-                    'MOM_BURST': {'mode': 'Simulator', 'ticker':'NSE:NIFTYBANK-INDEX', 'Components':None,'interval': 'D'},
                     'Volatility_BRK': {'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'Components': None, 'interval': 'D'}
                     }
 

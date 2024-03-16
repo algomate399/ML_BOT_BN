@@ -142,14 +142,6 @@
          </tr>
 
         <tr>
-            <td id="strategy_MOM_BURST">N/A</td>
-            <td id="status_MOM_BURST">N/A</td>
-            <td id="position_MOM_BURST">N/A</td>
-            <td id="mtm_MOM_BURST">N/A</td>
-
-         </tr>
-
-                <tr>
             <td id="strategy_Volatility_BRK">N/A</td>
             <td id="status_Volatility_BRK">N/A</td>
             <td id="position_Volatility_BRK">N/A</td>
@@ -175,11 +167,7 @@
         <input type="checkbox" name="SharpeRev" value="SharpeRev" id="SharpeRev"> SharpeRev
       </label>
 
-      <label for=MOM_BURST>
-        <input type="checkbox" name="MOM_BURST" value="MOM_BURST" id="MOM_BURST"> MOM_BURST
-      </label>
-
-        <label for=Volatility_BRK>
+      <label for=Volatility_BRK>
         <input type="checkbox" name="Volatility_BRK" value="Volatility_BRK" id="Volatility_BRK"> Volatility_BRK
       </label>
 
@@ -204,7 +192,6 @@
         <select name="Square_off_strategy" id="Square_off_strategy">
             <option value="TREND_EMA">TREND_EMA</option>
             <option value="SharpeRev">SharpeRev</option>
-            <option value="MOM_BURST">MOM_BURST</option>
             <option value="Volatility_BRK">Volatility_BRK</option>
 
 
@@ -230,17 +217,10 @@
             $('#position_SharpeRev').text(data['SharpeRev'].POSITION);
             $('#mtm_SharpeRev').text(data['SharpeRev'].MTM);
 
-            $('#strategy_MOM_BURST').text(data['MOM_BURST'].STRATEGY_NAME);
-            $('#status_MOM_BURST').text(data['MOM_BURST'].STATUS);
-            $('#position_MOM_BURST').text(data['MOM_BURST'].POSITION);
-            $('#mtm_MOM_BURST').text(data['MOM_BURST'].MTM);
-
             $('#strategy_Volatility_BRK').text(data['Volatility_BRK'].STRATEGY_NAME);
             $('#status_Volatility_BRK').text(data['Volatility_BRK'].STATUS);
             $('#position_Volatility_BRK').text(data['Volatility_BRK'].POSITION);
             $('#mtm_Volatility_BRK').text(data['Volatility_BRK'].MTM);
-
-
 
             $('#totalMTM').text(data['TOTAL'].TOTAL_MTM);
         });
@@ -292,7 +272,6 @@
 <!--    strategy selector-->
         const isTREND_EMASelected = document.querySelector('input[name="TREND_EMA"]').checked;
         const isSharpRevSelected = document.querySelector('input[name="SharpeRev"]').checked;
-        const isMOM_BURSTSelected = document.querySelector('input[name="MOM_BURST"]').checked;
         const isVolatility_BRKSelected = document.querySelector('input[name="Volatility_BRK"]').checked;
 
 
@@ -300,7 +279,6 @@
         const STRATEGY_SELECTED = {
             'TREND_EMA': isTREND_EMASelected,
             'SharpeRev': isSharpRevSelected,
-            'MOM_BURST':isMOM_BURSTSelected,
             'Volatility_BRK':isVolatility_BRKSelected,
             };
 
