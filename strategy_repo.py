@@ -6,6 +6,7 @@ import pickle as pk
 from sklearn.decomposition import PCA
 from hmmlearn import hmm
 from OrderParam import get_ensemble_n , get_params
+import os
 
 def Z_score(dt ,length):
     mean = dt.ewm(span=length).mean()
@@ -65,7 +66,7 @@ class STRATEGY_REPO:
 
     def get_model(self, n, model):
         file_name = f'{self.strategy_name}_{n}' if model == 'ML' else f'{self.strategy_name}_{model}_{n}'
-        file_path = f'TRAINED_ML\\{self.strategy_name}\\{self.model_type}\\{file_name}.pkl'
+        file_path = file_path = os.path.join('TRAINED_ML', self.strategy_name, self.model_type, f'{file_name}.pkl')
         with open(file_path, 'rb') as file:
             loaded_model = pk.load(file)
         return loaded_model
