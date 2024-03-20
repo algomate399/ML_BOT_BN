@@ -9,10 +9,11 @@ import pytz
 class OrderMng:
     LIVE_FEED = None
 
-    def __init__(self,mode, name,obj):
+    def __init__(self,symbol, mode, model_type,obj):
         self.StrategyFactory_Obj = obj
         self.mode = mode
-        self.strategy_name = name
+        self.symbol = symbol
+        self.model_type = model_type
         self.time_zone = pytz.timezone('Asia/kolkata')
         self.entry_time = {}
         self.exit_time = {}
@@ -25,7 +26,7 @@ class OrderMng:
         self.overnight_variables_update_flag = False
 
     def Update_OpenPosition(self):
-        OpenPos = GetOpenPosition(self.strategy_name) if not self.overnight_variables_update_flag else pd.DataFrame()
+        OpenPos = GetOpenPosition(self.model_type ,self.symbol) if not self.overnight_variables_update_flag else pd.DataFrame()
 
         if not OpenPos.empty:
             for index, row in OpenPos.iterrows():
@@ -142,7 +143,7 @@ class OrderMng:
         Transtype = self.Transtype[instrument]
         spread = self.spread[instrument]
 
-        UpdatePositionBook(dt, entry_time, exit_time, self.strategy_name,spread,
+        UpdatePositionBook(dt,self.symbol,entry_time, exit_time, self.model_type,spread,
                            Transtype, instrument,Signal, NetQty, NAV,
                            POSITION)
 

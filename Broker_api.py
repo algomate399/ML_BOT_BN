@@ -3,8 +3,6 @@ from pya3 import*
 import json
 
 class BROKER_API:
-    TICKER_OBJ = False
-    STRATEGY_RUN = False
     ltp = {}
 
     def __init__(self):
@@ -90,11 +88,7 @@ class BROKER_API:
     def stop_websocket(self):
         self.BROKER_APP.stop_websocket()
 
-    def on_tick(self):
 
-        if self.STRATEGY_RUN:
-            for key in self.STRATEGY_RUN.keys():
-                self.STRATEGY_RUN[key].on_tick()
 
 
 

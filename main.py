@@ -1,39 +1,102 @@
 import threading
-import time
-import pandas as pd
-import pytz
-from flask import Flask, render_template,jsonify,request,send_file
+
+from StrategyFactory import AlgoTrader_GPT
+from StrategyRep import PredictorEngine
+from flask import Flask,render_template, jsonify, request,send_file
 from database import request_position
 import io
 from Broker_api import BROKER_API
 from TICKER import TICKER_
-from strategy import StrategyFactory
 from FYERS_BR import HIST_BROKER_
 import warnings as ws
 ws.simplefilter('ignore')
+import pytz
+import time
+import pandas as pd
 
+
+# Class for for handling user Interface
+TICKER_TO_SUB = {'NSE:NIFTYBANK-INDEX':'D','NSE:NIFTY50-INDEX':'D'}
+
+TREND_EMA_components = ['NSE:NIFTY50-INDEX']
+
+Strategy_On_params = {'TREND_EMA': {'ticker': 'NSE:NIFTYBANK-INDEX','Components':TREND_EMA_components, 'interval': 'D'},
+                      'SharpeRev': {'ticker':'NSE:NIFTYBANK-INDEX','Components': None,'interval': 'D'},
+                      'Volatility_BRK': {'ticker': 'NSE:NIFTY50-INDEX', 'Components': None, 'interval': 'D'}
+                     }
 
 connected = False
-BROKER_APP = False
-STRATEGY_FAC = {}
-STRATEGY = {}
-SELECTED_STRATEGY = {}
+console = False
 
+class TradingConsole:
+    LIVE_FEED = False
+    Strategy_On_Board = None
+    mode = None
 
-def on_tick():
-    global BROKER_APP
-    global connected
-    # creating a loop for running strategy functions
-    while connected:
-        if BROKER_APP:
-            BROKER_APP.on_tick()
-            time.sleep(1)
-    else:
-        BROKER_APP.stop_websocket()
+    def __init__(self,strategy_on_params):
+        # connecting to the Brokers
+        self.connected,HIST,self.LIVE_FEED = self.login()
+        if self.connected:
+            time_zone = pytz.timezone('Asia/Kolkata')
+
+        # assigning the broker datafeed objects
+            AlgoTrader_GPT.time_zone = time_zone
+            AlgoTrader_GPT.LIVE_FEED = self.LIVE_FEED
+            PredictorEngine.time_zone = time_zone
+            PredictorEngine.TICKER = HIST
+
+        #   Creating Predictors based on the selected Strategy sets
+            tickers = []
+            self.AlgoTrader = {}
+            for name,param in strategy_on_params.items():
+                if self.Strategy_On_Board[name]:
+                    for model_type in ['long','short']:
+                        AlgoTrader_GPT.Predictors.append(PredictorEngine(name,model_type,**param))
+                        tickers.append(param['ticker'])
+
+        #   creating a strategy object
+            for ticker in tickers:
+                for model_type in ['long', 'short']:
+                    key = f'{ticker}_{model_type}'
+                    self.AlgoTrader[key] = AlgoTrader_GPT(self.mode,ticker,model_type)
+
+    def login(self):
+        try:
+            BROKER_APP = BROKER_API()
+            HIST_APP = HIST_BROKER_()
+            # login to Alice
+            BROKER_APP.login()
+            # login to Fyers
+            HIST_APP.login()
+            # initializing  the Websocket
+            BROKER_APP.BROKER_WEBSOCKET_INT()
+            # creating a TICKER object
+            TICKER_.BROKER_OBJ = HIST_APP.BROKER_APP
+            TICK = TICKER_(TICKER_TO_SUB)
+            connect = True
+
+        except Exception as e:
+            msg = 'Unable to login to the User Broker due to: {}'.format(e)
+            print(msg)
+            connect = False
+
+        return connect,TICK,BROKER_APP
+
+    def on_tick(self):
+        global connected
+
+        while connected:
+            for model in self.AlgoTrader:
+                self.AlgoTrader[model].On_tick()
+                time.sleep(1)
+        else:
+            self.LIVE_FEED.stop_websocket()
+
 
 
 # creating flask web app
 app = Flask(__name__)
+
 
 @app.route('/')
 def home():
@@ -42,79 +105,47 @@ def home():
 
 @app.route('/on_connect', methods=['POST'])
 def connect():
-    status = ''
-    global STRATEGY
+    global Strategy_On_params
     global connected
-    global BROKER_APP
-    global STRATEGY_FAC
-    global SELECTED_STRATEGY
+    global console
 
+    status = ''
     if not connected:
-        # creating a broker object  after login
-        BROKER_APP = BROKER_API()
-        HIST_APP = HIST_BROKER_()
-
-        # login to brokers and connecting websocket for datafeed
-        BROKER_APP.login()
-        HIST_APP.login()
-        BROKER_APP.BROKER_WEBSOCKET_INT()
-
-        # TICKER and interval  used  in strategies
-        TICKER_UNDER_STRATEGY = {'NSE:NIFTYBANK-INDEX':'D','NSE:NIFTY50-INDEX':'D'}
-        TICKER_.BROKER_OBJ = HIST_APP.BROKER_APP
-        TICK = TICKER_(TICKER_UNDER_STRATEGY)
-        BROKER_API.TICKER_OBJ = TICK
-        TICKER_.LIVE_FEED = BROKER_APP
-
-        # setting and creating strategy obj
-        StrategyFactory.TICKER = TICK
-        StrategyFactory.LIVE_FEED = BROKER_APP
-        StrategyFactory.time_zone = pytz.timezone('Asia/Kolkata')
-
-        # selecting strategy which is selected with checkbox
-        TREND_EMA_components = ['NSE:NIFTY50-INDEX']
-
-        STRATEGY = {'TREND_EMA': {'mode': 'Simulator', 'ticker': 'NSE:NIFTYBANK-INDEX','Components':TREND_EMA_components, 'interval': 'D'},
-                    'SharpeRev': {'mode': 'Simulator', 'ticker':'NSE:NIFTYBANK-INDEX','Components': None,'interval': 'D'},
-                    'Volatility_BRK': {'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'Components': None, 'interval': 'D'}
-                    }
-
         json = request.get_json()
-        SELECTED_STRATEGY = json['selected_strategy']
-
-        for key,value in STRATEGY.items():
-            if SELECTED_STRATEGY[key]:
-                STRATEGY_FAC[key] = StrategyFactory(key, value['mode'],
-                value['ticker'],value['Components'],value['interval'])
-
-        BROKER_APP.STRATEGY_RUN = STRATEGY_FAC
-        TICKER_.STRATEGY_RUN = STRATEGY_FAC
-
-    # starting the threads
-    if not connected:
-        connected = True
-        thread = threading.Thread(target=on_tick)
-        thread.start()
-        status = 'connected'
-    elif connected:
-        connected = False
+        TradingConsole.Strategy_On_Board = json['selected_strategy']
+        TradingConsole.mode = json['Mode']
+        console = TradingConsole(Strategy_On_params)
+        if console.connected:
+            connected = console.connected
+            thread = threading.Thread(target=console.on_tick)
+            thread.start()
+            status = 'connected'
+    else:
         status = 'not connected'
+        connected = False
 
     return status
 
 
+@app.route('/get_connection_status')
+def get_connection_status():
+    global connected
+    if connected:
+        return 'connected'
+    else:
+        return 'not connected'
+
+
 @app.route('/update-tick-data')
-def update_tick_data():
-    global BROKER_APP
+def Update_Ticker():
+    global console
 
-    ticker = ["NSE:NIFTYBANK-INDEX","NSE:NIFTY50-INDEX",'NSE:FINNIFTY-INDEX']
-
-    if BROKER_APP and all([s in BROKER_APP.ltp.keys() for s in ticker]):
+    ticker = ["NSE:NIFTYBANK-INDEX", "NSE:NIFTY50-INDEX", 'NSE:FINNIFTY-INDEX']
+    if connected and all([s in console.LIVE_FEED.ltp.keys() for s in ticker]):
         updated_data = {
-            'banknifty': BROKER_APP.ltp["NSE:NIFTYBANK-INDEX"],
-            'nifty':     BROKER_APP.ltp["NSE:NIFTY50-INDEX"],
-            'finnifty':  BROKER_APP.ltp['NSE:FINNIFTY-INDEX'],
-        }
+            'banknifty': console.LIVE_FEED.ltp["NSE:NIFTYBANK-INDEX"],
+            'nifty':     console.LIVE_FEED.ltp["NSE:NIFTY50-INDEX"],
+            'finnifty':  console.LIVE_FEED.ltp['NSE:FINNIFTY-INDEX']}
     else:
         updated_data = {
             'banknifty': 0,
@@ -123,30 +154,42 @@ def update_tick_data():
 
     return jsonify(updated_data)
 
+
 @app.route('/update_positions', methods=['GET'])
 def update_positions():
-    json = {}
-    global STRATEGY_FAC
-    global STRATEGY
-    global SELECTED_STRATEGY
+    global connected
+    global console
+    json_dt = {}
+    total_mtm = 0
+    if connected:
+        for i,(name,model) in enumerate(console.AlgoTrader.items(), start=1):
+            mtm = round(model.STR_MTM, 2)
+            json_dt[str(i)] = {
+            'symbol': model.index,
+            'Model_Type': model.model_type,
+            'POSITION': model.position,
+            'MTM':mtm,}
+            total_mtm += mtm
 
-    for strategy in STRATEGY.keys():
-        POSITION = 0
-        if strategy in STRATEGY_FAC:
-            value = round(STRATEGY_FAC[strategy].STR_MTM, 2)
-            POSITION = STRATEGY_FAC[strategy].position
-        else:
-            value = 0
-        json[strategy] = {
-        'STRATEGY_NAME': strategy,
-        'STATUS': 'LIVE' if SELECTED_STRATEGY[strategy] else 'OFFLINE',
-        'POSITION': f'OPEN:{POSITION}' if POSITION else 'CLOSED',
-        'MTM': value,
-        }
+    json_dt['TOTAL'] = {'TOTAL_MTM': total_mtm}
+    return jsonify(json_dt)
 
-    json['TOTAL'] = {'TOTAL_MTM': sum([strategy.STR_MTM for strategy in STRATEGY_FAC.values()])}
-    return jsonify(json)
+@app.route('/Square_off_Position',methods=['POST'])
+def Sqaure_off_Position():
+    resp = 'POSITION NOT AVAILABLE'
+    global connected
+    global console
 
+    if connected:
+        for i,(name,model) in enumerate(console.AlgoTrader.items() ,start=1):
+            if model.position:
+                success = model.squaring_of_all_position_AT_ONCE()
+                if not success:
+                    resp = 'Failed'
+                    break
+                else:
+                    resp = 'success'
+    return resp
 
 @app.route('/get_csv', methods=['POST'])
 def get_csv():
@@ -175,30 +218,6 @@ def get_csv():
         download_name='filtered_data.csv',
         mimetype='text/csv'
     )
-@app.route('/get_connection_status')
-def get_connection_status():
-    global connected
-    if connected:
-        return 'connected'
-    else:
-        return 'not connected'
-
-
-@app.route('/Square_off_Position',methods=['POST'])
-def Sqaure_off_Position():
-    resp = 'POSITION NOT AVAILABLE'
-    global STRATEGY_FAC
-    selected_str = request.form.get('Square_off_strategy')
-    if selected_str in STRATEGY_FAC.keys():
-        if STRATEGY_FAC[selected_str].position:
-            STRATEGY_FAC[selected_str].squaring_of_all_position_AT_ONCE()
-            if not STRATEGY_FAC[selected_str].position:
-                resp = 'success'
-            else:
-                resp = 'Failed'
-    return resp
-
-
 
 if __name__ == '__main__':
     app.run()

@@ -5,7 +5,7 @@ from datetime import datetime
 import numpy as np
 def request_position():
     records = pd.DataFrame()
-    url = 'https://algotrade.pythonanywhere.com/get_position'
+    url = 'https://algomate1234.pythonanywhere.com/get_position'
     try:
         response = requests.get(url)
         if response.status_code == 200:
@@ -16,11 +16,11 @@ def request_position():
 
     return records
 
-def UpdatePositionBook(Date, entrytime, exittime ,strategy_name,spread,Transtype, Instrument,Signal, NetQty, NAV, POSITION):
-    url = 'https://algotrade.pythonanywhere.com/append_position'
+def UpdatePositionBook(Date,symbol, entrytime, exittime ,strategy_name,spread,Transtype, Instrument,Signal, NetQty, NAV, POSITION):
+    url = 'https://algomate1234.pythonanywhere.com/append_position'
 
     # creating records
-    records = {'Date': Date, 'entrytime': entrytime, 'Strategy': strategy_name,'spread':spread,'Transtype': Transtype,
+    records = {'Date': Date,'Symbol':symbol,'entrytime': entrytime, 'Strategy': strategy_name,'spread':spread,'Transtype': Transtype,
                'Instrument': Instrument,'Signal': Signal, 'NetQty': NetQty,
                'NAV':  NAV, 'POSITION': POSITION,'exittime':exittime}
 
@@ -32,11 +32,11 @@ def UpdatePositionBook(Date, entrytime, exittime ,strategy_name,spread,Transtype
         print('Timeout:Unable to update the PositionBook Server , Server might be busy')
         print(f'PAYLOAD:{payload}')
 
-def GetOpenPosition(strategy):
+def GetOpenPosition(strategy,symbol):
     records = pd.DataFrame()
     Open_Pos = request_position()
     if not Open_Pos.empty:
-        is_open = (Open_Pos['Strategy'] == strategy) & (Open_Pos['POSITION'] == 'OPEN')
+        is_open = (Open_Pos['Strategy'] == strategy) & (Open_Pos['POSITION'] == 'OPEN') & (Open_Pos['Symbol'] == symbol)
         records = Open_Pos.loc[is_open]
     return records
 

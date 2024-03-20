@@ -6,7 +6,6 @@ import time
 class TICKER_:
     BROKER_OBJ = None
     STRATEGY_RUN = None
-    LIVE_FEED = None
 
     def __init__(self, ticker):
         self.request_retry = 3
