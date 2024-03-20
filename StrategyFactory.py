@@ -128,21 +128,24 @@ class AlgoTrader_GPT:
             self.trade_flag = False
 
     def MonitorTrade(self):
-        if self.position:
+        if self.position and self.overnight_flag:
             if not self.ACT_CIR:
                 strike = []
                 OpenPos = GetOpenPosition(self.model_type,self.index)
-                signal = list(set(OpenPos['Signal'].values))[-1]
-                self.spr = list(set(OpenPos['spread'].values))[-1]
-                for instrument in OpenPos['Instrument'].values:
-                    strike.append(self.Get_Strike(instrument))
-                # only valid for bull call or put spread strategy
-                if self.spr == 'DEBIT':
-                    range_ = 100
-                    self.ACT_CIR = np.max(strike) - range_ if signal > 0 else np.min(strike) + range_
-                elif self.spr == 'CREDIT':
-                    range_ = 100
-                    self.ACT_CIR = np.min(strike) + range_ if signal > 0 else np.max(strike)-range_
+                if not OpenPos.empty:
+                    signal = list(set(OpenPos['Signal'].values))[-1]
+                    self.spr = list(set(OpenPos['spread'].values))[-1]
+                    for instrument in OpenPos['Instrument'].values:
+                        strike.append(self.Get_Strike(instrument))
+                    # only valid for bull call or put spread strategy
+                    if self.spr == 'DEBIT':
+                        range_ = 100
+                        self.ACT_CIR = np.max(strike) - range_ if signal > 0 else np.min(strike) + range_
+                    elif self.spr == 'CREDIT':
+                        range_ = 100
+                        self.ACT_CIR = np.min(strike) + range_ if signal > 0 else np.max(strike)-range_
+                else:
+                    pass
 
             else:
                 spot = self.LIVE_FEED.get_ltp(self.symbol)
@@ -169,7 +172,7 @@ class AlgoTrader_GPT:
                     self.scheduler.every(5).seconds.do(self.OrderManger.Update_OpenPosition)
             else:
                 if not self.position and self.trade_flag and not self.processed_flag and not self.scheduler.jobs:
-                    Signals = self.Generate_Signals()
+                    Signals = -1 * self.Generate_Signals() if self.model_type == 'short' else self.Generate_Signals()
                     if Signals:
                         self.scheduler.every(5).seconds.do(self.Open_position,Signals)
                     self.processed_flag = True

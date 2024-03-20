@@ -88,7 +88,7 @@ class TradingConsole:
         while connected:
             for model in self.AlgoTrader:
                 self.AlgoTrader[model].On_tick()
-                time.sleep(1)
+                time.sleep(0.5)
         else:
             self.LIVE_FEED.stop_websocket()
 
@@ -181,7 +181,7 @@ def Sqaure_off_Position():
     global console
 
     if connected:
-        for i,(name,model) in enumerate(console.AlgoTrader.items() ,start=1):
+        for i,(name,model) in enumerate(console.AlgoTrader.items(),start=1):
             if model.position:
                 success = model.squaring_of_all_position_AT_ONCE()
                 if not success:
