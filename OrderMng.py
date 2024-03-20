@@ -162,6 +162,7 @@ class OrderMng:
         self.entry_time.pop(instrument, None)
         self.exit_time.pop(instrument, None)
         self.Signal.pop(instrument, None)
+        self.spread.pop(instrument, None)
 
 
 
