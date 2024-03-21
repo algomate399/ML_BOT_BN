@@ -48,6 +48,7 @@ class TradingConsole:
         #   Creating Predictors based on the selected Strategy sets
             tickers = []
             self.AlgoTrader = {}
+            AlgoTrader_GPT.Predictors = []
             for name,param in strategy_on_params.items():
                 if self.Strategy_On_Board[name]:
                     for model_type in ['long','short']:
