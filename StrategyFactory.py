@@ -64,6 +64,7 @@ class AlgoTrader_GPT:
 
     def Open_position(self,Signals):
         signal = 1 if Signals > 0 else -1
+        print(f'Signals:{Signals}_{self.model_type}_{self.symbol}')
         if not self.instrument_under_strategy:
             self.param = {}
             for key, value in OrderParam(Signals,self.index, self.IsExpiry()).items():
@@ -71,6 +72,7 @@ class AlgoTrader_GPT:
                 self.param[instrument] = {'Instrument': instrument, 'Transtype': value['transtype'],
                                           'Qty': value['Qty'],'signal':signal,'spread':value['spread']}
 
+            print(f'Params:{self.symbol}_{self.model_type}:{self.param}')
             # subscribing for instrument
             instrument_to_subscribe = [instrument for instrument in self.instrument_under_strategy if instrument not in self.LIVE_FEED.token.values()]
             if instrument_to_subscribe:
@@ -160,7 +162,7 @@ class AlgoTrader_GPT:
         for predictor in self.Predictors:
             if predictor.model_type == self.model_type and predictor.symbol == self.symbol:
                  signals.append(predictor.GetSignal())
-
+        print(f'Signal Appending:{signals}_{self.model_type}_{self.symbol}')
         return sum(signals)
 
     def On_tick(self):
@@ -173,6 +175,7 @@ class AlgoTrader_GPT:
             else:
                 if not self.position and self.trade_flag and not self.processed_flag and not self.scheduler.jobs:
                     Signals = -1 * self.Generate_Signals() if self.model_type == 'short' else self.Generate_Signals()
+                    print(f'Signals generated:{Signals}_{self.model_type}_{self.symbol}')
                     if Signals:
                         self.scheduler.every(5).seconds.do(self.Open_position,Signals)
                     self.processed_flag = True
