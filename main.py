@@ -49,6 +49,7 @@ class TradingConsole:
             tickers = []
             self.AlgoTrader = {}
             AlgoTrader_GPT.Predictors = []
+            self.max_tp_sl = 3500
             for name,param in strategy_on_params.items():
                 if self.Strategy_On_Board[name]:
                     for model_type in ['long','short']:
@@ -89,15 +90,20 @@ class TradingConsole:
         while connected:
             for model in self.AlgoTrader:
                 self.AlgoTrader[model].On_tick()
-                time.sleep(0.5)
+
+            if abs(sum([model.STR_MTM for model in self.AlgoTrader.values()])) > self.max_tp_sl:
+               if all([model.squaring_of_all_position_AT_ONCE() if model.position else True for model in self.AlgoTrader.values()]):
+                   pass
+               else:
+                   print('Unable to close all positions')
+
+            time.sleep(0.5)
         else:
             self.LIVE_FEED.stop_websocket()
 
 
-
 # creating flask web app
 app = Flask(__name__)
-
 
 @app.route('/')
 def home():
