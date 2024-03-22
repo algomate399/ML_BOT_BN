@@ -181,6 +181,10 @@
         <input type="checkbox" name="Volatility_BRK" value="Volatility_BRK" id="Volatility_BRK"> Volatility_BRK
       </label>
 
+      <label for=3EMA>
+        <input type="checkbox" name="3EMA" value="3EMA" id="3EMA"> 3EMA
+      </label>
+
 
       <!-- Add more checkboxes for each strategy you have -->
   </div>
@@ -266,6 +270,7 @@ function fetchPosition() {
         const isTREND_EMASelected = document.querySelector('input[name="TREND_EMA"]').checked;
         const isSharpRevSelected = document.querySelector('input[name="SharpeRev"]').checked;
         const isVolatility_BRKSelected = document.querySelector('input[name="Volatility_BRK"]').checked;
+        const is3EMASelected = document.querySelector('input[name="3EMA"]').checked;
         const selectedMode = document.querySelector('input[name="radioOption"]:checked').value;
 
 
@@ -274,6 +279,7 @@ function fetchPosition() {
             'TREND_EMA': isTREND_EMASelected,
             'SharpeRev': isSharpRevSelected,
             'Volatility_BRK':isVolatility_BRKSelected,
+             '3EMA':is3EMASelected,
             };
 
         // Make a POST request to /on_connect with the selected_strategy

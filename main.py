@@ -22,7 +22,8 @@ TREND_EMA_components = ['NSE:NIFTY50-INDEX']
 
 Strategy_On_params = {'TREND_EMA': {'ticker': 'NSE:NIFTYBANK-INDEX','Components':TREND_EMA_components, 'interval': 'D'},
                       'SharpeRev': {'ticker':'NSE:NIFTYBANK-INDEX','Components': None,'interval': 'D'},
-                      'Volatility_BRK': {'ticker': 'NSE:NIFTY50-INDEX', 'Components': None, 'interval': 'D'}
+                      'Volatility_BRK': {'ticker': 'NSE:NIFTY50-INDEX', 'Components': None, 'interval': 'D'},
+                       '3EMA': {'ticker': 'NSE:NIFTY50-INDEX', 'Components': None, 'interval': 'D'}
                      }
 
 connected = False

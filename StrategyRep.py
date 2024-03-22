@@ -113,6 +113,8 @@ class PredictorEngine:
             self.normalized_features, regime_input = self.SharpeRev(**params)
         elif self.strategy_name == 'Volatility_BRK':
             self.normalized_features, regime_input = self.Volatility_BRK(**params)
+        elif self.strategy_name == '3EMA':
+            self.normalized_features, regime_input = self.EMA_Strategy(**params)
 
         if self.strategy_name == 'TREND_EMA':
             for name in self.Components:
@@ -133,7 +135,7 @@ class PredictorEngine:
         # Initialization of variables
         features = pd.DataFrame()
 
-        #       calculating indicator values
+        # calculating indicator values
         candle_range = self.data['high'] - self.data['low']
         rsi = ta.rsi(self.data['close'], window)
         EMA = self.data['close'].ewm(span=window).mean()
@@ -141,7 +143,7 @@ class PredictorEngine:
         angle_2 = line_angle(EMA, lookback_2)
         zscore = Z_score(EMA, window)
 
-        #       calculating strategy components
+        # calculating strategy components
         features['pct_change'] = self.data['close'].pct_change()
         features['rsi'] = rsi
         features['EMA'] = EMA
@@ -285,6 +287,66 @@ class PredictorEngine:
             features = pd.concat([features, lag_values], axis=1)
 
         #  normalization the features
+        normalized_features = self.Normalization(features, normal_window, True)
+        normalized_features['dayofweek'] = normalized_features.index.dayofweek
+        # volatility Regime
+        VolatilityRegime = self.VolatilityRegime()
+        return normalized_features, VolatilityRegime.loc[normalized_features.index]
+
+    def EMA_Strategy(self, lookback_1, lookback_2, lookback_3, window_1, window_2, normal_window, lags):
+        # initiating the variables
+        features = pd.DataFrame()
+
+        # calculating indicators
+        ema_1 = self.data['close'].ewm(span=lookback_1).mean()
+        ema_2 = self.data['close'].ewm(span=lookback_2).mean()
+        ema_3 = self.data['close'].ewm(span=lookback_3).mean()
+        macd = ta.macd(self.data['close'], lookback_2, lookback_3, lookback_1)
+
+        # calculating slopes of angle
+        angle_1_win_1 = ta.slope(ema_1, window_1)
+        angle_2_win_1 = ta.slope(ema_2, window_1)
+        angle_3_win_1 = ta.slope(ema_3, window_1)
+
+        angle_1_win_2 = ta.slope(ema_1, window_2)
+        angle_2_win_2 = ta.slope(ema_2, window_2)
+        angle_3_win_2 = ta.slope(ema_3, window_2)
+
+        features['pct_change'] = self.data['close'].pct_change()
+        features['ema_1_vs_close'] = self.data['close'] - ema_1
+        features['ema_2_vs_close'] = self.data['close'] - ema_2
+        features['ema_3_vs_close'] = self.data['close'] - ema_3
+
+        features['ema_1_vs_high'] = self.data['high'] - ema_1
+        features['ema_2_vs_high'] = self.data['high'] - ema_2
+        features['ema_3_vs_high'] = self.data['high'] - ema_3
+
+        features['ema_1_vs_close'] = self.data['low'] - ema_1
+        features['ema_2_vs_close'] = self.data['low'] - ema_2
+        features['ema_3_vs_close'] = self.data['low'] - ema_3
+
+        features['angle_1_win_1'] = angle_1_win_1
+        features['angle_2_win_1'] = angle_2_win_1
+        features['angle_3_win_1'] = angle_3_win_1
+        features['angle_1_win_2'] = angle_1_win_2
+        features['angle_2_win_2'] = angle_2_win_2
+        features['angle_3_win_2'] = angle_3_win_2
+        features['ema_1-ema_2'] = ema_1 - ema_2
+        features['ema_2-ema_3'] = ema_2 - ema_3
+        features['ema_1_ema_3'] = ema_1 - ema_3
+
+        features = pd.concat([features, macd], axis=1)
+
+        # calculating lagged features
+        if lags:
+            lag_values = pd.DataFrame()
+            for col in features.columns:
+                for lag in range(1, lags + 1):
+                    lag_values[f'{col}_{lag}'] = features[col].shift(lag)
+                    # concatenate the feature and lag features
+            features = pd.concat([features, lag_values], axis=1)
+
+        # normalization the features
         normalized_features = self.Normalization(features, normal_window, True)
         normalized_features['dayofweek'] = normalized_features.index.dayofweek
         # volatility Regime

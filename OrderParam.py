@@ -69,6 +69,14 @@ def get_params(strategy_name, model_type):
             param_list = [{'band_width': 1.5, 'lags': 5, 'lookback': 60, 'normal_window': 122},
                           {'band_width': 0.05, 'lags': 5, 'lookback': 5, 'normal_window': 10}]
 
+    elif strategy_name == '3EMA':
+        if model_type == 'long':
+            param_list = [{'lags': 5,  'lookback_1': 3, 'lookback_2': 18, 'lookback_3': 21,  'normal_window': 123, 'window_1': 7, 'window_2': 21},
+                          {'lags': 0, 'lookback_1': 3, 'lookback_2': 18, 'lookback_3': 21,'normal_window': 42,  'window_1': 7, 'window_2': 19}]
+        else:
+            param_list = [{'lags': 5,'lookback_1': 9, 'lookback_2': 11, 'lookback_3': 55,'normal_window': 67,'window_1': 7, 'window_2': 21},
+                          {'lags': 5,'lookback_1': 9, 'lookback_2': 11, 'lookback_3': 30,'normal_window': 150,'window_1': 7, 'window_2': 21}]
+
     return param_list
 
 
