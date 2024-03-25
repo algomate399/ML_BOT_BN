@@ -18,13 +18,16 @@ import pandas as pd
 # Class for for handling user Interface
 TICKER_TO_SUB = {'NSE:NIFTYBANK-INDEX':'D','NSE:NIFTY50-INDEX':'D'}
 
-TREND_EMA_components = ['NSE:NIFTY50-INDEX']
+TREND_EMA_components = SPREAD_components = ['NSE:NIFTY50-INDEX']
+
 
 Strategy_On_params = {'TREND_EMA': {'ticker': 'NSE:NIFTYBANK-INDEX','Components':TREND_EMA_components, 'interval': 'D'},
                       'SharpeRev': {'ticker':'NSE:NIFTYBANK-INDEX','Components': None,'interval': 'D'},
                       'Volatility_BRK': {'ticker': 'NSE:NIFTY50-INDEX', 'Components': None, 'interval': 'D'},
-                       '3EMA': {'ticker': 'NSE:NIFTY50-INDEX', 'Components': None, 'interval': 'D'}
-                     }
+                       '3EMA': {'ticker': 'NSE:NIFTY50-INDEX', 'Components': None, 'interval': 'D'},
+                       'SPREAD': {'ticker': 'NSE:NIFTYBANK-INDEX', 'Components': SPREAD_components, 'interval': 'D'},
+                       'MEAN_REVERT': {'ticker': 'NSE:NIFTY50-INDEX', 'Components': None, 'interval': 'D'},
+                      }
 
 connected = False
 console = False

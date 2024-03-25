@@ -77,6 +77,33 @@ def get_params(strategy_name, model_type):
             param_list = [{'lags': 5,'lookback_1': 9, 'lookback_2': 11, 'lookback_3': 55,'normal_window': 67,'window_1': 7, 'window_2': 21},
                           {'lags': 5,'lookback_1': 9, 'lookback_2': 11, 'lookback_3': 30,'normal_window': 150,'window_1': 7, 'window_2': 21}]
 
+    elif strategy_name == 'SPREAD':
+         if model_type == 'long':
+            param_list = [{'dn_q': 0.17989029361812062, 'lags': 0,  'lookback': 7,  'normal_window': 148,  'up_q': 0.6880853102870929},
+                            {'dn_q': 0.1, 'lags': 5,  'lookback': 8,  'normal_window': 150,  'up_q': 0.6},
+                            {'dn_q': 0.1, 'lags': 0,  'lookback': 8,  'normal_window': 129,  'up_q': 0.6},
+                            {'dn_q': 0.3, 'lags': 5,  'lookback': 5,  'normal_window': 127,  'up_q': 0.6},
+                            {'dn_q': 0.16403142490389894, 'lags': 4,  'lookback': 7,  'normal_window': 53, 'up_q': 0.8188527449350995},
+                            {'dn_q': 0.1, 'lags': 5,  'lookback': 8, 'normal_window': 57, 'up_q': 1.0}]
+         else:
+            param_list = [{'dn_q': 0.1, 'lags': 5,  'lookback': 5, 'normal_window': 50,  'up_q': 1.0},
+                            {'dn_q': 0.1, 'lags': 5,  'lookback': 5,  'normal_window': 95,  'up_q': 1.0},
+                            {'dn_q': 0.3, 'lags': 5,  'lookback': 5,  'normal_window': 122,  'up_q': 1.0}]
+
+    elif strategy_name == 'MEAN_REVERT':
+        if model_type == 'long':
+            param_list = [{'lags': 5, 'lookback_1': 5, 'lookback_2': 55,  'normal_window': 112,  'window': 8},
+                        {'lags': 0,  'lookback_1': 5, 'lookback_2': 13,  'normal_window': 73,  'window': 8},
+                        {'lags': 0,  'lookback_1': 8, 'lookback_2': 55,  'normal_window': 150, 'window': 8},
+                        {'lags': 0,  'lookback_1': 8, 'lookback_2': 13,  'normal_window': 112,  'window': 21},
+                        {'lags': 0,  'lookback_1': 8, 'lookback_2': 55, 'normal_window': 150,  'window': 21},
+                        {'lags': 5,  'lookback_1': 5, 'lookback_2': 55,  'normal_window': 126,  'window': 8},
+                        {'lags': 5,  'lookback_1': 5, 'lookback_2': 30,  'normal_window': 50,  'window': 13}]
+        else:
+            param_list = [{'lags': 3, 'lookback_1': 7, 'lookback_2': 13,  'normal_window': 72,  'window': 8},
+                          {'lags': 0,  'lookback_1': 5, 'lookback_2': 23,  'normal_window': 150,  'window': 8},
+                          {'lags': 0,  'lookback_1': 5, 'lookback_2': 13, 'normal_window': 138, 'window': 8}]
+
     return param_list
 
 

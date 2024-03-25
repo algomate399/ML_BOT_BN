@@ -115,6 +115,10 @@ class PredictorEngine:
             self.normalized_features, regime_input = self.Volatility_BRK(**params)
         elif self.strategy_name == '3EMA':
             self.normalized_features, regime_input = self.EMA_Strategy(**params)
+        elif self.strategy_name == 'SPREAD':
+            self.normalized_features, regime_input = self.SPREAD_(**params)
+        elif self.strategy_name == 'MEAN_REVERT':
+            self.normalized_features, regime_input = self.Mean_Rev(**params)
 
         if self.strategy_name == 'TREND_EMA':
             for name in self.Components:
@@ -154,7 +158,7 @@ class PredictorEngine:
         features['angle_ratio'] = angle_1 / angle_2
         features['zscore'] = zscore
 
-        #       calculating lagged features
+        # calculating lagged features
         if lags:
             lag_values = pd.DataFrame()
             for col in features.columns:
@@ -163,7 +167,7 @@ class PredictorEngine:
             #       concatenate the feature and lag features
             features = pd.concat([features, lag_values], axis=1)
 
-        #       normalization the features
+        # normalization the features
         normalized_features = self.Normalization(features, normal_window, True)
         normalized_features['dayofweek'] = normalized_features.index.dayofweek
         VolatilityRegime = self.VolatilityRegime()
@@ -191,7 +195,7 @@ class PredictorEngine:
             vwap = ta.vwap(dt['high'], dt['low'], dt['close'], dt['volume'])
             zscore_volume = Z_score(dt['volume'], window)
 
-            #   setting volume based features
+            # setting volume based features
             features['vwap'] = vwap
             features['volume_score'] = volume_score
             features['volume_zscore'] = zscore_volume
@@ -350,6 +354,109 @@ class PredictorEngine:
         normalized_features = self.Normalization(features, normal_window, True)
         normalized_features['dayofweek'] = normalized_features.index.dayofweek
         # volatility Regime
+        VolatilityRegime = self.VolatilityRegime()
+        return normalized_features, VolatilityRegime.loc[normalized_features.index]
+
+    def SPREAD_(self, lookback, up_q, dn_q, normal_window, lags):
+        dt_1 = self.data
+        dt_2 = self.TICKER.get_data(self.Components[-1], f'{self.interval}')
+        # initializing the variables
+        features = pd.DataFrame()
+
+        # calculating indicators
+        spread_diff = dt_1['close'] - dt_2['close']
+        mean_spr = spread_diff.rolling(window=lookback).mean()
+        std_spr = spread_diff.rolling(window=lookback).std()
+        spread_score = (spread_diff - mean_spr) / std_spr
+        correlation = dt_1['close'].rolling(window=lookback).corr(dt_2['close'])
+        rsi = ta.rsi(spread_diff, lookback)
+        quantile_up = spread_score.rolling(window=lookback).quantile(up_q)
+        quantile_dn = spread_score.rolling(window=lookback).quantile(dn_q)
+        mean_corr = correlation.rolling(window=lookback).mean()
+
+        # setting the features
+        features['spr_score'] = spread_score
+        features['corr'] = correlation
+        features['rsi'] = rsi
+        features['pct_change'] = dt_1['close'].pct_change()
+        features['quantile_up_r'] = quantile_up / spread_score
+        features['quantile_dn_r'] = spread_score / quantile_up
+        features['spr_vs_mean'] = spread_diff - mean_spr
+        features['corr_vs_mean'] = correlation - mean_corr
+
+        # calculating lagged features
+        if lags:
+            lag_values = pd.DataFrame()
+            for col in features.columns:
+                for lag in range(1, lags + 1):
+                    lag_values[f'{col}_{lag}'] = features[col].shift(lag)
+                    #       concatenate the feature and lag features
+            features = pd.concat([features, lag_values], axis=1)
+
+        # normalization the features
+        normalized_features = self.Normalization(features, normal_window, True)
+        normalized_features['dayofweek'] = normalized_features.index.dayofweek
+        # volatility Regime
+        VolatilityRegime = self.VolatilityRegime()
+        return normalized_features, VolatilityRegime.loc[normalized_features.index]
+
+    def Mean_Rev(self, lookback_1, lookback_2, window, normal_window, lags):
+        # initializing the variables
+        features = pd.DataFrame()
+
+        # calculating indicator values
+        mean_1 = self.data['close'].rolling(window=lookback_1).mean()
+        mean_2 = self.data['close'].rolling(window=lookback_2).mean()
+        std_1 = self.data['close'].rolling(window=lookback_1).mean()
+        std_2 = self.data['close'].rolling(window=lookback_2).mean()
+        atr = ta.atr(self.data['high'], self.data['low'], self.data['close'], window)
+        mom, mean_range = calculate_MOM_Burst(self.data, window)
+        candle_range = self.data['high'] - self.data['low']
+
+        # expansion score
+        exp_1 = (self.data['close'] - mean_1) / std_1
+        exp_2 = (self.data['close'] - mean_2) / std_2
+
+        UP_bound_1 = exp_1.rolling(window=window).max().shift(1)
+        DN_bound_1 = exp_1.rolling(window=window).min().shift(1)
+
+        UP_bound_2 = exp_2.rolling(window=window).max().shift(1)
+        DN_bound_2 = exp_2.rolling(window=window).min().shift(1)
+
+        exp_1_ratio_UP = UP_bound_1 / exp_1
+        exp_1_ratio_DN = exp_1 / DN_bound_1
+
+        exp_2_ratio_UP = UP_bound_2 / exp_2
+        exp_2_ratio_DN = exp_2 / DN_bound_2
+
+        # setting features
+        features['pct_change'] = self.data['close'].pct_change()
+        features['exp_1'] = exp_1
+        features['exp_2'] = exp_2
+        features['MOM'] = mom
+        features['mean_range_vs_candle_range'] = mean_range / candle_range
+        features['exp_1_ratio_UP'] = exp_1_ratio_UP
+        features['exp_1_ratio_DN'] = exp_1_ratio_DN
+        features['exp_2_ratio_UP'] = exp_2_ratio_UP
+        features['exp_2_ratio_DN'] = exp_2_ratio_DN
+        features['mean_close_1'] = self.data['close'] - mean_1
+        features['mean_close_2'] = self.data['close'] - mean_2
+        features['spr'] = mean_1 - mean_2
+        features['atr'] = atr
+
+        #  calculating lagged features
+        if lags:
+            lag_values = pd.DataFrame()
+            for col in features.columns:
+                for lag in range(1, lags + 1):
+                    lag_values[f'{col}_{lag}'] = features[col].shift(lag)
+                    #       concatenate the feature and lag features
+            features = pd.concat([features, lag_values], axis=1)
+
+        #  normalization the features
+        normalized_features = self.Normalization(features, normal_window, True)
+        normalized_features['dayofweek'] = normalized_features.index.dayofweek
+        #  volatility Regime
         VolatilityRegime = self.VolatilityRegime()
         return normalized_features, VolatilityRegime.loc[normalized_features.index]
 

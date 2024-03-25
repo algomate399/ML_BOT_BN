@@ -185,6 +185,16 @@
         <input type="checkbox" name="3EMA" value="3EMA" id="3EMA"> 3EMA
       </label>
 
+      <label for=SPREAD>
+        <input type="checkbox" name="SPREAD" value="SPREAD" id="SPREAD"> SPREAD
+      </label>
+
+      <label for=MEAN_REVERT>
+        <input type="checkbox" name="MEAN_REVERT" value="3EMA" id="MEAN_REVERT"> MEAN_REVERT
+      </label>
+
+
+
 
       <!-- Add more checkboxes for each strategy you have -->
   </div>
@@ -271,6 +281,9 @@ function fetchPosition() {
         const isSharpRevSelected = document.querySelector('input[name="SharpeRev"]').checked;
         const isVolatility_BRKSelected = document.querySelector('input[name="Volatility_BRK"]').checked;
         const is3EMASelected = document.querySelector('input[name="3EMA"]').checked;
+        const isSPREADSelected = document.querySelector('input[name="SPREAD"]').checked;
+        const isMEAN_REVERTSelected = document.querySelector('input[name="MEAN_REVERT"]').checked;
+
         const selectedMode = document.querySelector('input[name="radioOption"]:checked').value;
 
 
@@ -280,6 +293,8 @@ function fetchPosition() {
             'SharpeRev': isSharpRevSelected,
             'Volatility_BRK':isVolatility_BRKSelected,
              '3EMA':is3EMASelected,
+              'SPREAD':isSPREADSelected,
+              'MEAN_REVERT':isMEAN_REVERTSelected
             };
 
         // Make a POST request to /on_connect with the selected_strategy
