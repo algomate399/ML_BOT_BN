@@ -25,6 +25,8 @@ class AlgoTrader_GPT:
         self.instrument_under_strategy = []
         self.index = 'NIFTY' if self.symbol == 'NSE:NIFTY50-INDEX' else ('BANKNIFTY' if ticker == 'NSE:NIFTYBANK-INDEX' else 'FINNIFTY')
         self.strike_interval = {'NSE:NIFTYBANK-INDEX': 100, 'NSE:NIFTY50-INDEX': 50, 'NSE:FINNIFTY-INDEX': 50}
+        self.market_open = datetime.strptime('09:15:00', "%H:%M:%S").time()
+        self.market_close = datetime.strptime('15:30:00', "%H:%M:%S").time()
         self.scheduler = schedule.Scheduler()
         self.position = 0
         OrderMng.LIVE_FEED = self.LIVE_FEED
@@ -33,7 +35,8 @@ class AlgoTrader_GPT:
 
     def Is_Valid_time(self):
         valid_time = False
-        if datetime.now(self.time_zone).time() > datetime.strptime('09:15:00', "%H:%M:%S").time():
+        current_time = datetime.now(self.time_zone).time()
+        if (current_time >= self.market_open) and (current_time < self.market_close):
             valid_time = True
         return valid_time
 
