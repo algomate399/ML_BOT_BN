@@ -2,7 +2,7 @@ from datetime import datetime
 from OrderMng import OrderMng
 import numpy as np
 import schedule
-from database import GetOpenPosition,get_expiry
+from database import GetOpenPosition
 from OrderParam import OrderParam
 import re
 # Class for handling Strategy flow
@@ -10,6 +10,8 @@ class AlgoTrader_GPT:
     time_zone = None
     Predictors = []
     LIVE_FEED = None
+    expiry = {}
+    expiry_1 = {}
 
     def __init__(self, mode,ticker, model_type):
         self.symbol = ticker
@@ -23,7 +25,7 @@ class AlgoTrader_GPT:
         self.trade_flag = True
         self.processed_flag = False
         self.instrument_under_strategy = []
-        self.index = 'NIFTY' if self.symbol == 'NSE:NIFTY50-INDEX' else ('BANKNIFTY' if ticker == 'NSE:NIFTYBANK-INDEX' else 'FINNIFTY')
+        self.index = 'NIFTY' if ticker == 'NSE:NIFTY50-INDEX' else ('BANKNIFTY' if ticker == 'NSE:NIFTYBANK-INDEX' else 'FINNIFTY')
         self.strike_interval = {'NSE:NIFTYBANK-INDEX': 100, 'NSE:NIFTY50-INDEX': 50, 'NSE:FINNIFTY-INDEX': 50}
         self.market_open = datetime.strptime('09:15:00', "%H:%M:%S").time()
         self.market_close = datetime.strptime('15:30:00', "%H:%M:%S").time()
@@ -31,7 +33,7 @@ class AlgoTrader_GPT:
         self.position = 0
         OrderMng.LIVE_FEED = self.LIVE_FEED
         self.OrderManger = OrderMng(self.index, mode,self.model_type,self)
-        self.expiry = get_expiry(self.index)
+        self.expiry,self.expiry_1 = self.expiry[self.symbol], self.expiry_1[self.symbol]
 
     def Is_Valid_time(self):
         valid_time = False
@@ -40,9 +42,8 @@ class AlgoTrader_GPT:
             valid_time = True
         return valid_time
 
-
     def IsExpiry(self):
-        expiry = datetime.strptime(self.expiry[0], '%d%b%y')
+        expiry = datetime.strptime(self.expiry_1[0], '%d%b%y')
         return datetime.now(self.time_zone).date() == expiry.date()
 
     def get_instrument(self, option_type, step, expiry_idx):
@@ -52,7 +53,7 @@ class AlgoTrader_GPT:
         strike = lambda: (round(self.spot / interval)) * interval
         ATM = strike()
         stk = ATM + interval * step
-        instrument = f'{self.index}{self.expiry[expiry_idx]}{option_type[0]}{stk}'
+        instrument = f'NSE:{self.index}{self.expiry[expiry_idx]}{stk}{option_type}'
         # appending into the list for future use
         self.instrument_under_strategy.append(instrument)
 
@@ -60,7 +61,7 @@ class AlgoTrader_GPT:
 
     def Get_Strike(self, instrument):
         ex = [e for e in self.expiry if e in instrument][-1]
-        stk = instrument.replace(self.index, '').replace(ex, '')
+        stk = instrument.replace('NSE:', '').replace(self.index,'').replace(ex,'')
         strike = re.findall('[0-9]+', stk)[0]
         # opt = re.findall('[A-Za-z]+', stk)[0]
         return int(strike)
@@ -75,7 +76,7 @@ class AlgoTrader_GPT:
                                           'Qty': value['Qty'],'signal':signal,'spread':value['spread']}
 
             # subscribing for instrument
-            instrument_to_subscribe = [instrument for instrument in self.instrument_under_strategy if instrument not in self.LIVE_FEED.token.values()]
+            instrument_to_subscribe = [instrument for instrument in self.instrument_under_strategy if instrument not in self.LIVE_FEED.symbol_on_subscription]
             if instrument_to_subscribe:
                 self.LIVE_FEED.subscribe_new_symbol(instrument_to_subscribe)
 
@@ -114,7 +115,7 @@ class AlgoTrader_GPT:
         if success:
             self.position = self.position if self.OrderManger.net_qty else 0
             if not self.position:
-                self.ACT_CIR = 0
+                self.Refresh_var([instrument for instrument in sequence])
         return success
 
     def Validate_OvernightPosition(self):
@@ -185,3 +186,7 @@ class AlgoTrader_GPT:
         # checking the scheduled task
         self.scheduler.run_pending()
         self.Exit_position_on_real_time()
+
+    def Refresh_var(self,symbols=None):
+        self.ACT_CIR = 0
+        self.LIVE_FEED.unsubscribe_symbols(symbols)

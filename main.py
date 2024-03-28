@@ -1,11 +1,12 @@
 import threading
 
+import numpy as np
+
 from StrategyFactory import AlgoTrader_GPT
 from StrategyRep import PredictorEngine
 from flask import Flask,render_template, jsonify, request,send_file
-from database import request_position
+from database import request_position ,get_expiry
 import io
-from Broker_api import BROKER_API
 from TICKER import TICKER_
 from FYERS_BR import HIST_BROKER_
 import warnings as ws
@@ -53,32 +54,34 @@ class TradingConsole:
             tickers = []
             self.AlgoTrader = {}
             AlgoTrader_GPT.Predictors = []
-            self.max_tp_sl = 3500
+            self.max_tp_sl = 4000
+
             for name,param in strategy_on_params.items():
                 if self.Strategy_On_Board[name]:
                     for model_type in ['long','short']:
                         AlgoTrader_GPT.Predictors.append(PredictorEngine(name,model_type,**param))
                         tickers.append(param['ticker'])
 
+        #   getting expiry
+            for ticker in np.unique(tickers):
+                AlgoTrader_GPT.expiry[ticker],AlgoTrader_GPT.expiry_1[ticker] = get_expiry(ticker)
+
         #   creating a strategy object
-            for ticker in tickers:
+            for ticker in np.unique(tickers):
                 for model_type in ['long', 'short']:
                     key = f'{ticker}_{model_type}'
                     self.AlgoTrader[key] = AlgoTrader_GPT(self.mode,ticker,model_type)
 
     def login(self):
         try:
-            BROKER_APP = BROKER_API()
-            HIST_APP = HIST_BROKER_()
-            # login to Alice
-            BROKER_APP.login()
-            # login to Fyers
-            HIST_APP.login()
+            Broker = HIST_BROKER_()
+            # login to broker(fyers)
+            Broker.login()
             # initializing  the Websocket
-            BROKER_APP.BROKER_WEBSOCKET_INT()
+            Broker.connect_websocket()
             # creating a TICKER object
-            TICKER_.BROKER_OBJ = HIST_APP.BROKER_APP
-            TICK = TICKER_(TICKER_TO_SUB)
+            TICKER_.BROKER_OBJ = Broker.BROKER_APP
+            HIST = TICKER_(TICKER_TO_SUB)
             connect = True
 
         except Exception as e:
@@ -86,7 +89,7 @@ class TradingConsole:
             print(msg)
             connect = False
 
-        return connect,TICK,BROKER_APP
+        return connect,HIST,Broker
 
     def on_tick(self):
         global connected
@@ -102,12 +105,11 @@ class TradingConsole:
                    print('Unable to close all positions')
 
             time.sleep(0.5)
-        else:
-            self.LIVE_FEED.stop_websocket()
 
 
 # creating flask web app
 app = Flask(__name__)
+
 
 @app.route('/')
 def home():
@@ -185,6 +187,7 @@ def update_positions():
     json_dt['TOTAL'] = {'TOTAL_MTM': total_mtm}
     return jsonify(json_dt)
 
+
 @app.route('/Square_off_Position',methods=['POST'])
 def Sqaure_off_Position():
     resp = 'POSITION NOT AVAILABLE'
@@ -201,6 +204,7 @@ def Sqaure_off_Position():
                 else:
                     resp = 'success'
     return resp
+
 
 @app.route('/get_csv', methods=['POST'])
 def get_csv():

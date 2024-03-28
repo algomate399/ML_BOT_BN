@@ -1,4 +1,5 @@
 from fyers_apiv3 import fyersModel
+from fyers_apiv3.FyersWebsocket import data_ws
 from datetime import datetime
 from time import sleep
 import os
@@ -17,11 +18,15 @@ def getEncodedString(string):
 
 
 class HIST_BROKER_():
+    ltp = {}
     def __init__(self):
         self.BROKER_APP = None
         self.BROKER_SOCKET = None
         self.access_token = None
+        self.Socket = None
         self.client_id = None
+        self.symbol_on_subscription = []
+        self.Indices = ["NSE:NIFTYBANK-INDEX","NSE:NIFTY50-INDEX",'NSE:FINNIFTY-INDEX']
         self.time_zone = pytz.timezone('Asia/kolkata')
         self.delete_log()
 
@@ -87,3 +92,57 @@ class HIST_BROKER_():
                     print(f'Error deleting log file {e}')
             else:
                 pass
+
+    def connect_websocket(self):
+        def onmessage(message):
+            if 'ltp' in message:
+                self.ltp[message['symbol']] = float(message['ltp'])
+
+        def onerror(message):
+            print("Error:", message)
+
+        def onclose(message):
+            print("Connection closed:", message)
+
+        def onopen():
+            data_type = "SymbolUpdate"
+
+            # Subscribe to the specified symbols and data type
+            self.Socket.subscribe(symbols=self.Indices, data_type=data_type)
+            self.Socket.keep_running()
+
+        # Create a FyersDataSocket instance with the provided parameters
+        self.Socket = data_ws.FyersDataSocket(
+            access_token=f'{self.client_id}:{self.access_token}',  # Access token in the format "appid:accesstoken"
+            log_path="",
+            litemode=True,
+            write_to_file=False,
+            reconnect=True,
+            on_connect=onopen,
+            on_close=onclose,
+            on_error=onerror,
+            on_message=onmessage
+        )
+        self.Socket.connect()
+
+    def subscribe_new_symbol(self, symbols):
+        unique_symbols = [s for s in symbols if s not in self.symbol_on_subscription]
+        if unique_symbols:
+           self.Socket.subscribe(symbols=unique_symbols,data_type="SymbolUpdate")
+           for s in unique_symbols:
+               if s not in self.symbol_on_subscription:
+                   self.symbol_on_subscription.append(s)
+
+    def unsubscribe_symbols(self, symbols):
+        symbols_to_unsubscribe = [s for s in symbols if s in self.symbol_on_subscription]
+        if symbols_to_unsubscribe:
+            self.Socket.unsubscribe(symbols=symbols_to_unsubscribe, data_type='SymbolUpdate')
+            for s in symbols_to_unsubscribe:
+                 self.Refresh_var(s)
+
+    def get_ltp(self, symbol):
+            return self.ltp[symbol]
+
+    def Refresh_var(self,s):
+        self.symbol_on_subscription.remove(s)
+        self.ltp.pop(s, None)
