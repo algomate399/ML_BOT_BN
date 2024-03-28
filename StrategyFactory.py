@@ -147,7 +147,7 @@ class AlgoTrader_GPT:
                         self.ACT_CIR = np.max(strike) - range_ if signal > 0 else np.min(strike) + range_
                     elif self.spr == 'CREDIT':
                         range_ = 100
-                        self.ACT_CIR = np.min(strike) + range_ if signal > 0 else np.max(strike)-range_
+                        self.ACT_CIR = np.max(strike) + range_ if signal > 0 else np.min(strike) - range_
                 else:
                     pass
 
