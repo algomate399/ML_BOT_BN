@@ -50,7 +50,7 @@ class PredictorEngine:
         self.load_model()
 
     def load_model(self):
-        self.params , ensemble = get_ensemble_n(self.strategy_name, self.model_type)
+        self.params, ensemble = get_ensemble_n(self.strategy_name, self.model_type)
         for n in range(1,ensemble+1):
             self.base_ml.append(self.get_model(n, 'ML'))
             self.pca_model.append(self.get_model(n, 'PCA'))
@@ -471,4 +471,3 @@ class PredictorEngine:
         # Volatility Regime
         states = pd.Series(self.regime_model_1.predict(regime_input), index=regime_input.index, name='Regime')
         return states
-

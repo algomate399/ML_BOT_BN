@@ -47,7 +47,7 @@ class OrderMng:
         self.overnight_variables_update_flag = True
 
         if self.nav:
-            instrument_to_subscribe = [instrument for instrument in self.nav if instrument not in self.LIVE_FEED.symbol_on_subscription]
+            instrument_to_subscribe = [instrument for instrument in self.nav if instrument not in self.LIVE_FEED.token.values()]
             if instrument_to_subscribe:
                 self.LIVE_FEED.subscribe_new_symbol(instrument_to_subscribe)
 

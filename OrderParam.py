@@ -4,7 +4,7 @@ import json
 
 def OrderParam( Signals, index, is_expiry=False):
     PositionMultiplier = abs(Signals)
-    QTY = 50 * PositionMultiplier if index =='NIFTY' else 15*PositionMultiplier
+    QTY = 25 * PositionMultiplier if index =='NIFTY' else 15*PositionMultiplier
     p1 = p2 = spread = None
 
     if Signals > 0:
