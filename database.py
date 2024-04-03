@@ -41,11 +41,11 @@ def GetOpenPosition(strategy,symbol):
     return records
 
 
-def get_expiry(indices):
+def get_expiry(symbol):
     #   date formats
     input_format = "%Y-%m-%d"
     output_format = "%d%b%y"
-
+    indices = 'NIFTY' if symbol == 'NSE:NIFTY50-INDEX' else ('BANKNIFTY' if symbol == 'NSE:NIFTYBANK-INDEX' else 'FINNIFTY')
     file_name = 'NFO.csv'
     NFO = pd.read_csv(file_name)
     cond = NFO['Symbol'] == indices

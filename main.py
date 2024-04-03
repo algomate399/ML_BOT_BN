@@ -5,7 +5,7 @@ import numpy as np
 from StrategyFactory import AlgoTrader_GPT
 from StrategyRep import PredictorEngine
 from flask import Flask,render_template, jsonify, request,send_file
-from database import request_position
+from database import request_position ,get_expiry
 import io
 from Broker_api import BROKER_API
 from TICKER import TICKER_
@@ -61,6 +61,10 @@ class TradingConsole:
                     for model_type in ['long','short']:
                         AlgoTrader_GPT.Predictors.append(PredictorEngine(name,model_type,**param))
                         tickers.append(param['ticker'])
+
+                #   getting expiry
+            for ticker in np.unique(tickers):
+                    AlgoTrader_GPT.expiry_dict[ticker] = get_expiry(ticker)
 
         #   creating a strategy object
             for ticker in np.unique(tickers):

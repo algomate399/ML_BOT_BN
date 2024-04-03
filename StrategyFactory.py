@@ -10,6 +10,7 @@ class AlgoTrader_GPT:
     time_zone = None
     Predictors = []
     LIVE_FEED = None
+    expiry_dict = {}
 
     def __init__(self, mode,ticker, model_type):
         self.symbol = ticker
@@ -31,7 +32,7 @@ class AlgoTrader_GPT:
         self.position = 0
         OrderMng.LIVE_FEED = self.LIVE_FEED
         self.OrderManger = OrderMng(self.index, mode,self.model_type,self)
-        self.expiry = get_expiry(self.index)
+        self.expiry = self.expiry_dict[self.symbol]
 
     def Is_Valid_time(self):
         valid_time = False
