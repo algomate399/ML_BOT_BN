@@ -55,7 +55,7 @@ class TradingConsole:
             tickers = []
             self.AlgoTrader = {}
             AlgoTrader_GPT.Predictors = []
-            self.max_tp_sl = 3500
+            self.max_tp_sl = 4000
             for name,param in strategy_on_params.items():
                 if self.Strategy_On_Board[name]:
                     for model_type in ['long','short']:
@@ -107,7 +107,7 @@ class TradingConsole:
                else:
                    print('Unable to close all positions')
 
-            time.sleep(0.5)
+            time.sleep(1)
         else:
             self.LIVE_FEED.stop_websocket()
 

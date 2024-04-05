@@ -8,7 +8,7 @@ class TICKER_:
     STRATEGY_RUN = None
 
     def __init__(self, ticker):
-        self.request_retry = 3
+        self.request_retry = 5
         self.ticker_under_strategy = ticker
         self.time_zone = pytz.timezone('Asia/Kolkata')
         self.ticker_space = {}
@@ -16,6 +16,7 @@ class TICKER_:
         self.last_execution = 0
         self.last_historical_update = None
         self.hist_df = None
+        self.run_update()
 
     def get_history(self, symbol, interval, days=365):
 
@@ -66,7 +67,6 @@ class TICKER_:
 
     def get_data(self,symbol,interval):
         try:
-            self.run_update()
             if interval == 'D':
                 today = datetime.now().date()
                 resample = self.ticker_space[symbol]
