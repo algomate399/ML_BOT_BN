@@ -2,30 +2,30 @@ import os
 import json
 
 
-def OrderParam( Signals, index, is_expiry=False):
-    PositionMultiplier = abs(Signals)
+def OrderParam( Signal,bias,index, is_expiry=False):
+    PositionMultiplier = 2 if bias > 1.0 else 1
     QTY = 25 * PositionMultiplier if index =='NIFTY' else 15*PositionMultiplier
     p1 = p2 = spread = None
 
-    if Signals > 0:
-        # if is_expiry:
+    if Signal > 0:
+        if is_expiry:
             # credit spread
             p1 = {'opt': 'PE', 'step': -6, 'transtype': 'BUY', 'Qty': QTY, 'expiry': 0, 'spread':'CREDIT'}
             p2 = {'opt': 'PE', 'step': -3, 'transtype': 'SELL', 'Qty': QTY, 'expiry': 0, 'spread':'CREDIT'}
-        # else:
-        #     # debit spread
-        #     p1 = {'opt': 'CE', 'step': 0, 'transtype': 'BUY', 'Qty': QTY, 'expiry': 0, 'spread':'DEBIT'}
-        #     p2 = {'opt': 'CE', 'step': 4, 'transtype': 'SELL', 'Qty': QTY, 'expiry': 0, 'spread':'DEBIT'}
+        else:
+            # debit spread
+            p1 = {'opt': 'CE', 'step': 0, 'transtype': 'BUY', 'Qty': QTY, 'expiry': 0, 'spread':'DEBIT'}
+            p2 = {'opt': 'CE', 'step': 4, 'transtype': 'SELL', 'Qty': QTY, 'expiry': 0, 'spread':'DEBIT'}
 
-    elif Signals < 0:
-        # if is_expiry:
+    elif Signal < 0:
+        if is_expiry:
             # credit spread
             p1 = {'opt': 'CE', 'step': 6, 'transtype': 'BUY', 'Qty': QTY, 'expiry': 0, 'spread':'CREDIT'}
             p2 = {'opt': 'CE', 'step': 3, 'transtype': 'SELL', 'Qty': QTY, 'expiry': 0,'spread':'CREDIT'}
-        # else:
-        #     # debit spread
-        #     p1 = {'opt': 'PE', 'step': 0, 'transtype': 'BUY', 'Qty': QTY, 'expiry': 0, 'spread':'DEBIT'}
-        #     p2 = {'opt': 'PE', 'step': -4, 'transtype': 'SELL', 'Qty': QTY, 'expiry': 0,'spread':'DEBIT'}
+        else:
+            # debit spread
+            p1 = {'opt': 'PE', 'step': 0, 'transtype': 'BUY', 'Qty': QTY, 'expiry': 0, 'spread':'DEBIT'}
+            p2 = {'opt': 'PE', 'step': -4, 'transtype': 'SELL', 'Qty': QTY, 'expiry': 0,'spread':'DEBIT'}
 
     return {'p1': p1, 'p2': p2}
 

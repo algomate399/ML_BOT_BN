@@ -183,12 +183,12 @@ class PredictorEngine:
     def TREND_EMA_components(self, dt, window, normal_window, lags, id_):
         features = pd.DataFrame()
 
-        #       calculating the indicator values
+        # calculating the indicator values
         rsi = ta.rsi(dt['close'], window)
         EMA = dt['close'].ewm(span=window).mean()
         zscore = Z_score(dt['close'], window)
 
-        #       setting features
+        # setting features
         features['rsi'] = rsi
         features['EMA'] = EMA
         features['zscore'] = zscore
@@ -196,13 +196,13 @@ class PredictorEngine:
         features['spr'] = dt['close'] / EMA
 
         if dt['volume'].mean() > 0:
-            #       volume based indicators
+            # volume based indicators
             average_volume = dt['volume'].rolling(window=window).mean()
             volume_score = (dt['volume'] - average_volume) / average_volume
             vwap = ta.vwap(dt['high'], dt['low'], dt['close'], dt['volume'])
             zscore_volume = Z_score(dt['volume'], window)
 
-            #       setting volumne based features
+            # setting volumne based features
             features['vwap'] = vwap
             features['volume_score'] = volume_score
             features['volume_zscore'] = zscore_volume

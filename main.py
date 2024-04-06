@@ -44,6 +44,7 @@ class TradingConsole:
         self.connected,HIST,self.LIVE_FEED = self.login()
         if self.connected:
             time_zone = pytz.timezone('Asia/Kolkata')
+            self.processed_flag = False
 
         # assigning the broker datafeed objects
             AlgoTrader_GPT.time_zone = time_zone
@@ -52,7 +53,7 @@ class TradingConsole:
             PredictorEngine.TICKER = HIST
 
         #   Creating Predictors based on the selected Strategy sets
-            tickers = []
+            self.tickers = []
             self.AlgoTrader = {}
             AlgoTrader_GPT.Predictors = []
             self.max_tp_sl = 4000
@@ -60,14 +61,14 @@ class TradingConsole:
                 if self.Strategy_On_Board[name]:
                     for model_type in ['long','short']:
                         AlgoTrader_GPT.Predictors.append(PredictorEngine(name,model_type,**param))
-                        tickers.append(param['ticker'])
+                        self.tickers.append(param['ticker'])
 
-                #   getting expiry
-            for ticker in np.unique(tickers):
-                    AlgoTrader_GPT.expiry_dict[ticker] = get_expiry(ticker)
+            #   getting expiry
+            for ticker in np.unique(self.tickers):
+                AlgoTrader_GPT.expiry_dict[ticker] = get_expiry(ticker)
 
         #   creating a strategy object
-            for ticker in np.unique(tickers):
+            for ticker in np.unique(self.tickers):
                 for model_type in ['long', 'short']:
                     key = f'{ticker}_{model_type}'
                     self.AlgoTrader[key] = AlgoTrader_GPT(self.mode,ticker,model_type)
@@ -98,6 +99,18 @@ class TradingConsole:
         global connected
 
         while connected:
+            if not self.processed_flag:
+                # generating bias
+                for ticker in np.unique(self.tickers):
+                    access_long = f'{ticker}_long'
+                    access_short = f'{ticker}_short'
+                    long_signal = self.AlgoTrader[access_long].Generate_Signals()
+                    short_signal = self.AlgoTrader[access_short].Generate_Signals()
+                    self.AlgoTrader[access_long].bias = long_signal/short_signal
+                    self.AlgoTrader[access_short].bias = short_signal/long_signal
+
+                self.processed_flag = True
+
             for model in self.AlgoTrader:
                 self.AlgoTrader[model].On_tick()
 
@@ -190,6 +203,7 @@ def update_positions():
 
     json_dt['TOTAL'] = {'TOTAL_MTM': total_mtm}
     return jsonify(json_dt)
+
 
 @app.route('/Square_off_Position',methods=['POST'])
 def Sqaure_off_Position():

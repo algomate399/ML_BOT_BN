@@ -17,12 +17,14 @@ class AlgoTrader_GPT:
         self.model_type = model_type
         self.spot = 0
         self.ACT_CIR = 0
+        self.bias = 0
         self.spr = None
         self.STR_MTM = 0
         self.param = {}
         self.overnight_flag = False
         self.trade_flag = True
         self.processed_flag = False
+        self.Signals_list = []
         self.instrument_under_strategy = []
         self.index = 'NIFTY' if self.symbol == 'NSE:NIFTY50-INDEX' else ('BANKNIFTY' if ticker == 'NSE:NIFTYBANK-INDEX' else 'FINNIFTY')
         self.strike_interval = {'NSE:NIFTYBANK-INDEX': 100, 'NSE:NIFTY50-INDEX': 50, 'NSE:FINNIFTY-INDEX': 50}
@@ -40,7 +42,6 @@ class AlgoTrader_GPT:
         if (current_time >= self.market_open) and (current_time < self.market_close):
             valid_time = True
         return valid_time
-
 
     def IsExpiry(self):
         expiry = datetime.strptime(self.expiry[0], '%d%b%y')
@@ -70,7 +71,7 @@ class AlgoTrader_GPT:
         signal = 1 if Signals > 0 else -1
         if not self.instrument_under_strategy:
             self.param = {}
-            for key, value in OrderParam(Signals,self.index, self.IsExpiry()).items():
+            for key, value in OrderParam(signal,self.bias,self.index, self.IsExpiry()).items():
                 instrument = self.get_instrument(value['opt'], value['step'], value['expiry'])
                 self.param[instrument] = {'Instrument': instrument, 'Transtype': value['transtype'],
                                           'Qty': value['Qty'],'signal':signal,'spread':value['spread']}
@@ -160,14 +161,15 @@ class AlgoTrader_GPT:
                     self.processed_flag = False
 
     def Generate_Signals(self):
-        signals = []
-        for predictor in self.Predictors:
-            if predictor.model_type == self.model_type and predictor.symbol == self.symbol:
-                 signals.append(predictor.GetSignal())
+        if not self.Signals_list:
+            for predictor in self.Predictors:
+                if predictor.model_type == self.model_type and predictor.symbol == self.symbol:
+                    self.Signals_list.append(predictor.GetSignal())
 
-        return sum(signals)
+        return sum(self.Signals_list)
 
     def On_tick(self):
+
         # updating the overnight position
         if self.Is_Valid_time():
             if not self.overnight_flag:
@@ -176,7 +178,7 @@ class AlgoTrader_GPT:
                     self.scheduler.every(5).seconds.do(self.OrderManger.Update_OpenPosition)
             else:
                 if not self.position and self.trade_flag and not self.processed_flag and not self.scheduler.jobs:
-                    Signals = -1 * self.Generate_Signals() if self.model_type == 'short' else self.Generate_Signals()
+                    Signals = -1 * sum(self.Signals_list) if self.model_type == 'short' else sum(self.Signals_list)
                     if Signals:
                         self.scheduler.every(5).seconds.do(self.Open_position,Signals)
                     self.processed_flag = True
