@@ -25,9 +25,12 @@ class AlgoTrader_GPT:
         self.trade_flag = True
         self.processed_flag = False
         self.Signals_list = []
+        self.rolling_count = 0
         self.instrument_under_strategy = []
         self.index = 'NIFTY' if self.symbol == 'NSE:NIFTY50-INDEX' else ('BANKNIFTY' if ticker == 'NSE:NIFTYBANK-INDEX' else 'FINNIFTY')
         self.strike_interval = {'NSE:NIFTYBANK-INDEX': 100, 'NSE:NIFTY50-INDEX': 50, 'NSE:FINNIFTY-INDEX': 50}
+        self.lot_size = {'BANKNIFTY':15,'NIFTY':25}
+        self.max_lot_overnight_holding = {'long': 1, 'short': 0}
         self.market_open = datetime.strptime('09:15:00', "%H:%M:%S").time()
         self.market_close = datetime.strptime('15:30:00', "%H:%M:%S").time()
         self.scheduler = schedule.Scheduler()
@@ -71,7 +74,7 @@ class AlgoTrader_GPT:
         signal = 1 if Signals > 0 else -1
         if not self.instrument_under_strategy:
             self.param = {}
-            for key, value in OrderParam(signal,self.bias,self.index, self.IsExpiry()).items():
+            for key, value in OrderParam(signal,self.lot_size[self.index],self.bias,self.rolling_count,self.IsExpiry()).items():
                 instrument = self.get_instrument(value['opt'], value['step'], value['expiry'])
                 self.param[instrument] = {'Instrument': instrument, 'Transtype': value['transtype'],
                                           'Qty': value['Qty'],'signal':signal,'spread':value['spread']}
@@ -98,8 +101,10 @@ class AlgoTrader_GPT:
         else:
             print(f'Socket is not Opened yet,re-iterating the function')
 
-    def squaring_of_all_position_AT_ONCE(self):
+    def squaring_of_all_position_AT_ONCE(self,realtime=False):
         success = False
+        QTY = 0
+
         # function ensure instrument will SELL trans_type will be executed first then hedge position
         sequence = {k: v for k, v in
                     sorted(self.OrderManger.Transtype.items(),
@@ -107,7 +112,15 @@ class AlgoTrader_GPT:
 
         # ensuring every position is squared off if not break the loop else set open position to zero
         for instrument in sequence.keys():
-            if not self.OrderManger.close_position(instrument, abs(self.OrderManger.net_qty[instrument])):
+
+            if realtime and not self.IsExpiry():
+                net_qty = abs(self.OrderManger.net_qty[instrument])
+                lot_size = self.lot_size[self.index]
+                QTY = lot_size * max((round(net_qty/lot_size)-self.max_lot_overnight_holding[self.model_type]),1)
+            else:
+                QTY = abs(self.OrderManger.net_qty[instrument])
+
+            if not self.OrderManger.close_position(instrument, QTY):
                 success = False
                 break
             else:
@@ -126,10 +139,9 @@ class AlgoTrader_GPT:
 
     def Exit_position_on_real_time(self):
         time_cond = datetime.now(self.time_zone).time() > datetime.strptime('15:15:00', "%H:%M:%S").time()
-        cond = time_cond if self.model_type == 'short' else time_cond and self.IsExpiry()
-        if cond:
+        if time_cond:
             if self.position:
-                self.squaring_of_all_position_AT_ONCE()
+                self.squaring_of_all_position_AT_ONCE(realtime=True)
             self.trade_flag = False
 
     def MonitorTrade(self):
@@ -158,6 +170,7 @@ class AlgoTrader_GPT:
                 cond_2 = (self.ACT_CIR > spot and self.position > 0) | (self.ACT_CIR < spot and self.position < 0)
                 if (cond_1 and self.spr == 'DEBIT') | (cond_2 and self.spr == 'CREDIT'):
                     self.squaring_of_all_position_AT_ONCE()
+                    self.rolling_count += 1
                     self.processed_flag = False
 
     def Generate_Signals(self):

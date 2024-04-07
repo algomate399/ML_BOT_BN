@@ -2,9 +2,9 @@ import os
 import json
 
 
-def OrderParam( Signal,bias,index, is_expiry=False):
+def OrderParam( Signal,lot_size,bias,rolling_count,is_expiry=False):
     PositionMultiplier = 2 if bias > 1.0 else 1
-    QTY = 25 * PositionMultiplier if index =='NIFTY' else 15*PositionMultiplier
+    QTY = lot_size * PositionMultiplier
     p1 = p2 = spread = None
 
     if Signal > 0:
@@ -14,8 +14,8 @@ def OrderParam( Signal,bias,index, is_expiry=False):
             p2 = {'opt': 'PE', 'step': -3, 'transtype': 'SELL', 'Qty': QTY, 'expiry': 0, 'spread':'CREDIT'}
         else:
             # debit spread
-            p1 = {'opt': 'CE', 'step': 0, 'transtype': 'BUY', 'Qty': QTY, 'expiry': 0, 'spread':'DEBIT'}
-            p2 = {'opt': 'CE', 'step': 4, 'transtype': 'SELL', 'Qty': QTY, 'expiry': 0, 'spread':'DEBIT'}
+            p1 = {'opt': 'CE', 'step': 0 if not rolling_count else 3, 'transtype': 'BUY', 'Qty': QTY, 'expiry': 0, 'spread':'DEBIT'}
+            p2 = {'opt': 'CE', 'step': 3 if not rolling_count else 6, 'transtype': 'SELL', 'Qty': QTY, 'expiry': 0, 'spread':'DEBIT'}
 
     elif Signal < 0:
         if is_expiry:
@@ -24,8 +24,8 @@ def OrderParam( Signal,bias,index, is_expiry=False):
             p2 = {'opt': 'CE', 'step': 3, 'transtype': 'SELL', 'Qty': QTY, 'expiry': 0,'spread':'CREDIT'}
         else:
             # debit spread
-            p1 = {'opt': 'PE', 'step': 0, 'transtype': 'BUY', 'Qty': QTY, 'expiry': 0, 'spread':'DEBIT'}
-            p2 = {'opt': 'PE', 'step': -4, 'transtype': 'SELL', 'Qty': QTY, 'expiry': 0,'spread':'DEBIT'}
+            p1 = {'opt': 'PE', 'step': 0 if not rolling_count else -3, 'transtype': 'BUY', 'Qty': QTY, 'expiry': 0, 'spread':'DEBIT'}
+            p2 = {'opt': 'PE', 'step': -3 if not rolling_count else -6, 'transtype': 'SELL', 'Qty': QTY, 'expiry': 0,'spread':'DEBIT'}
 
     return {'p1': p1, 'p2': p2}
 

@@ -26,7 +26,7 @@ class OrderMng:
         self.overnight_variables_update_flag = False
 
     def Update_OpenPosition(self):
-        OpenPos = GetOpenPosition(self.model_type ,self.symbol) if not self.overnight_variables_update_flag else pd.DataFrame()
+        OpenPos = GetOpenPosition(self.model_type,self.symbol) if not self.overnight_variables_update_flag else pd.DataFrame()
 
         if not OpenPos.empty:
             for index, row in OpenPos.iterrows():
