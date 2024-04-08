@@ -116,13 +116,14 @@ class AlgoTrader_GPT:
             if realtime and not self.IsExpiry():
                 net_qty = abs(self.OrderManger.net_qty[instrument])
                 lot_size = self.lot_size[self.index]
-                QTY = lot_size * max((round(net_qty/lot_size)-self.max_lot_overnight_holding[self.model_type]),1)
+                QTY = lot_size * (round(net_qty/lot_size)-self.max_lot_overnight_holding[self.model_type])
             else:
                 QTY = abs(self.OrderManger.net_qty[instrument])
 
-            if not self.OrderManger.close_position(instrument, QTY):
-                success = False
-                break
+            if QTY:
+                if not self.OrderManger.close_position(instrument, QTY):
+                    success = False
+                    break
             else:
                 success = True
 
@@ -130,6 +131,7 @@ class AlgoTrader_GPT:
             self.position = self.position if self.OrderManger.net_qty else 0
             if not self.position:
                 self.ACT_CIR = 0
+
         return success
 
     def Validate_OvernightPosition(self):
