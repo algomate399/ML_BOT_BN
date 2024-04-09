@@ -56,7 +56,7 @@ class AlgoTrader_GPT:
         self.spot = self.LIVE_FEED.get_ltp(self.symbol) if not self.spot else self.spot
         strike = lambda: (round(self.spot / interval)) * interval
         ATM = strike()
-        stk = ATM + interval * step
+        stk = ATM + (interval * step)
         instrument = f'{self.index}{self.expiry[expiry_idx]}{option_type[0]}{stk}'
         # appending into the list for future use
         self.instrument_under_strategy.append(instrument)
@@ -158,11 +158,12 @@ class AlgoTrader_GPT:
                         strike.append(self.Get_Strike(instrument))
                     # only valid for bull call or put spread strategy
                     if self.spr == 'DEBIT':
-                        range_ = 100
+                        range_ = self.strike_interval[self.symbol]
                         self.ACT_CIR = np.max(strike) - range_ if signal > 0 else np.min(strike) + range_
                     elif self.spr == 'CREDIT':
-                        range_ = 100
+                        range_ = self.strike_interval[self.symbol]
                         self.ACT_CIR = np.max(strike) + range_ if signal > 0 else np.min(strike) - range_
+
                 else:
                     pass
 
@@ -170,7 +171,7 @@ class AlgoTrader_GPT:
                 spot = self.LIVE_FEED.get_ltp(self.symbol)
                 cond_1 = (self.ACT_CIR < spot and self.position > 0) | (self.ACT_CIR > spot and self.position < 0)
                 cond_2 = (self.ACT_CIR > spot and self.position > 0) | (self.ACT_CIR < spot and self.position < 0)
-                if (cond_1 and self.spr == 'DEBIT') | (cond_2 and self.spr == 'CREDIT'):
+                if (cond_1 and self.spr == 'DEBIT') | (cond_2 and self.spr == 'CREDIT') and self.processed_flag:
                     self.squaring_of_all_position_AT_ONCE()
                     self.rolling_count += 1
                     self.processed_flag = False
