@@ -1,7 +1,5 @@
 import threading
-
 import numpy as np
-
 from StrategyFactory import AlgoTrader_GPT
 from StrategyRep import PredictorEngine
 from flask import Flask,render_template, jsonify, request,send_file
@@ -100,15 +98,18 @@ class TradingConsole:
 
         while connected:
             if not self.processed_flag:
+                long_proba = []
+                short_proba = []
                 # generating bias
                 for ticker in np.unique(self.tickers):
                     access_long = f'{ticker}_long'
                     access_short = f'{ticker}_short'
-                    long_signal = self.AlgoTrader[access_long].Generate_Signals()
-                    short_signal = self.AlgoTrader[access_short].Generate_Signals()
-                    self.AlgoTrader[access_long].bias = long_signal/short_signal
-                    self.AlgoTrader[access_short].bias = short_signal/long_signal
+                    long_proba.append(self.AlgoTrader[access_long].Generate_Signals())
+                    short_proba.append(self.AlgoTrader[access_short].Generate_Signals())
 
+                long_bias = np.sum(long_proba)/np.sum(short_proba)
+                short_bias = np.sum(short_proba)/np.sum(long_proba)
+                AlgoTrader_GPT.bias = {'long':long_bias, 'short':short_bias}
                 self.processed_flag = True
 
             for model in self.AlgoTrader:
@@ -222,6 +223,7 @@ def Sqaure_off_Position():
                     resp = 'success'
     return resp
 
+
 @app.route('/get_csv', methods=['POST'])
 def get_csv():
     start_date = request.form.get('start_date')
@@ -249,6 +251,7 @@ def get_csv():
         download_name='filtered_data.csv',
         mimetype='text/csv'
     )
+
 
 if __name__ == '__main__':
     app.run()

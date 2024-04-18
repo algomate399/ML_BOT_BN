@@ -77,7 +77,7 @@ class PredictorEngine:
             else:
                 feature = np.concatenate((feature, proba), axis=1)
 
-        return self.ensemble_model.predict(feature)[-1]
+        return self.ensemble_model.predict_proba(feature)[-1, 1]
 
     def get_prediction(self, n):
         model_input = self.pca_model[n].transform(self.normalized_features.values[-1].reshape(1, -1))

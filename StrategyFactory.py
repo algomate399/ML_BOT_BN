@@ -11,6 +11,7 @@ class AlgoTrader_GPT:
     Predictors = []
     LIVE_FEED = None
     expiry_dict = {}
+    bias = None
 
     def __init__(self, mode,ticker, model_type):
         self.symbol = ticker
@@ -25,7 +26,6 @@ class AlgoTrader_GPT:
         self.processed_flag = False
         self.instrument_under_strategy = []
         self.Signal_list = []
-        self.bias = 0
         self.index = 'NIFTY' if self.symbol == 'NSE:NIFTY50-INDEX' else ('BANKNIFTY' if ticker == 'NSE:NIFTYBANK-INDEX' else 'FINNIFTY')
         self.strike_interval = {'NSE:NIFTYBANK-INDEX': 100, 'NSE:NIFTY50-INDEX': 50, 'NSE:FINNIFTY-INDEX': 50}
         self.lot_size = {'BANKNIFTY':15, 'NIFTY':25}
@@ -69,11 +69,12 @@ class AlgoTrader_GPT:
         # opt = re.findall('[A-Za-z]+', stk)[0]
         return int(strike)
 
-    def Open_position(self,Signals):
-        signal = 1 if Signals > 0 else -1
+    def Open_position(self):
+        signal = 1 if self.model_type == 'long' else -1
+        bias = self.bias[self.model_type]
         if not self.instrument_under_strategy:
             self.param = {}
-            for key, value in OrderParam(Signals,self.lot_size[self.index] , self.bias).items():
+            for key, value in OrderParam(signal,self.lot_size[self.index],bias).items():
                 instrument = self.get_instrument(value['opt'], value['step'], value['expiry'])
                 self.param[instrument] = {'Instrument': instrument, 'Transtype': value['transtype'],
                                           'Qty': value['Qty'],'signal':signal,'spread':value['spread']}
@@ -174,9 +175,7 @@ class AlgoTrader_GPT:
                     self.scheduler.every(5).seconds.do(self.OrderManger.Update_OpenPosition)
             else:
                 if not self.position and self.trade_flag and not self.processed_flag and not self.scheduler.jobs:
-                    Signals = -1 * np.sum(self.Signal_list) if self.model_type == 'short' else np.sum(self.Signal_list)
-                    if Signals:
-                        self.scheduler.every(5).seconds.do(self.Open_position,Signals)
+                    self.scheduler.every(5).seconds.do(self.Open_position)
                     self.processed_flag = True
 
         self.MonitorTrade()
