@@ -76,8 +76,8 @@ class PredictorEngine:
                 feature = proba
             else:
                 feature = np.concatenate((feature, proba), axis=1)
-
-        return self.ensemble_model.predict_proba(feature)[-1, 1]
+        pos_proba = self.ensemble_model.predict(feature)
+        return pos_proba
 
     def get_prediction(self, n):
         model_input = self.pca_model[n].transform(self.normalized_features.values[-1].reshape(1, -1))
@@ -244,7 +244,7 @@ class PredictorEngine:
         features['rsi'] = rsi
         features['pct_change'] = dt_1['close'].pct_change()
         features['quantile_up_r'] = quantile_up / spread_score
-        features['quantile_dn_r'] = spread_score / quantile_up
+        features['quantile_dn_r'] = spread_score / quantile_dn
         features['spr_vs_mean'] = spread_diff - mean_spr
         features['corr_vs_mean'] = correlation - mean_corr
 

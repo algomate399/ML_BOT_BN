@@ -162,7 +162,7 @@ class AlgoTrader_GPT:
     def Generate_Signals(self):
         for predictor in self.Predictors:
             if predictor.model_type == self.model_type and predictor.symbol == self.symbol:
-                 self.Signal_list.append(predictor.GetSignal())
+                self.Signal_list.append(predictor.GetSignal())
 
         return sum(self.Signal_list)
 
