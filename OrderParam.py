@@ -3,7 +3,7 @@ import json
 
 
 def OrderParam( Signal,lot_size,bias):
-    PositionMultiplier = 2 if bias > 1.0 else 1
+    PositionMultiplier = 4 if bias > 1.0 else 2
     QTY = lot_size * PositionMultiplier
     p1 = p2 = spread = None
 
