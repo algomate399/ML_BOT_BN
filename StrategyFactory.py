@@ -2,7 +2,7 @@ from datetime import datetime
 from OrderMng import OrderMng
 import numpy as np
 import schedule
-from database import GetOpenPosition,get_expiry
+from database import GetOpenPosition
 from OrderParam import OrderParam
 import re
 # Class for handling Strategy flow
@@ -20,8 +20,6 @@ class AlgoTrader_GPT:
         self.ACT_CIR = 0
         self.spr = None
         self.STR_MTM = 0
-        self.target_spread = 0
-        self.target_decay = 0.85
         self.param = {}
         self.overnight_flag = False
         self.trade_flag = True
@@ -31,8 +29,11 @@ class AlgoTrader_GPT:
         self.index = 'NIFTY' if self.symbol == 'NSE:NIFTY50-INDEX' else ('BANKNIFTY' if ticker == 'NSE:NIFTYBANK-INDEX' else 'FINNIFTY')
         self.strike_interval = {'NSE:NIFTYBANK-INDEX': 100, 'NSE:NIFTY50-INDEX': 50, 'NSE:FINNIFTY-INDEX': 50}
         self.lot_size = {'BANKNIFTY':15, 'NIFTY':25}
+
         self.market_open = datetime.strptime('09:15:00', "%H:%M:%S").time()
         self.market_close = datetime.strptime('15:30:00', "%H:%M:%S").time()
+        self.re_entry_before = datetime.strptime('14:00:00', "%H:%M:%S").time()
+
         self.scheduler = schedule.Scheduler()
         self.position = 0
         OrderMng.LIVE_FEED = self.LIVE_FEED
@@ -46,7 +47,6 @@ class AlgoTrader_GPT:
         if (current_time >= self.market_open) and (current_time < self.market_close):
             valid_time = True
         return valid_time
-
 
     def IsExpiry(self):
         expiry = datetime.strptime(self.expiry[0], '%d%b%y')
@@ -123,7 +123,6 @@ class AlgoTrader_GPT:
             self.position = self.position if self.OrderManger.net_qty else 0
             if not self.position:
                 self.ACT_CIR = 0
-                self.target_spread = 0
         return success
 
     def Validate_OvernightPosition(self):
@@ -147,7 +146,7 @@ class AlgoTrader_GPT:
                 if not OpenPos.empty:
                     signal = list(set(OpenPos['Signal'].values))[-1]
                     self.spr = list(set(OpenPos['spread'].values))[-1]
-                    self.target_spread = abs(OpenPos['NAV'].sum()) * self.target_decay
+
                     for instrument in OpenPos['Instrument'].values:
                         strike.append(self.Get_Strike(instrument))
                     # only valid for bull call or put spread strategy
@@ -158,10 +157,11 @@ class AlgoTrader_GPT:
                     pass
 
             else:
+
                 spot = self.LIVE_FEED.get_ltp(self.symbol)
                 cond_1 = (self.ACT_CIR > spot and self.position > 0) | (self.ACT_CIR < spot and self.position < 0)
-                cond_2 = (self.OrderManger.mtm >= self.target_spread)
-                if ((cond_1 and self.spr == 'CREDIT') | cond_2) and self.processed_flag:
+                cond_2 = (datetime.now(self.time_zone).time() <= self.re_entry_before) if self.IsExpiry() else True
+                if (cond_1 and self.spr == 'CREDIT' and cond_2) and self.processed_flag:
                     self.squaring_of_all_position_AT_ONCE()
                     self.processed_flag = False
 
