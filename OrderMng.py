@@ -18,6 +18,7 @@ class OrderMng:
         self.entry_time = {}
         self.exit_time = {}
         self.nav = {}
+        self.mtm = 0
         self.spread = {}
         self.Signal = {}
         self.net_qty = {}
@@ -63,8 +64,8 @@ class OrderMng:
             self.StrategyFactory_Obj.scheduler.clear()
 
     def Live_MTM(self):
-        mtm = sum([(self.LIVE_FEED.get_ltp(ins) * self.net_qty[ins]) - self.nav[ins] for ins in self.nav])
-        return self.CumMtm+mtm
+        self.mtm = sum([(self.LIVE_FEED.get_ltp(ins) * self.net_qty[ins]) - self.nav[ins] for ins in self.nav])
+        return self.CumMtm+self.mtm
 
     def Add_position(self,Instrument,Transtype, Qty,signal,spread):
         price = 0
@@ -163,6 +164,7 @@ class OrderMng:
         self.exit_time.pop(instrument, None)
         self.Signal.pop(instrument, None)
         self.spread.pop(instrument, None)
+        self.mtm = 0
 
 
 

@@ -160,7 +160,7 @@ class AlgoTrader_GPT:
             else:
                 spot = self.LIVE_FEED.get_ltp(self.symbol)
                 cond_1 = (self.ACT_CIR > spot and self.position > 0) | (self.ACT_CIR < spot and self.position < 0)
-                cond_2 = (self.STR_MTM >= self.target_spread)
+                cond_2 = (self.OrderManger.mtm >= self.target_spread)
                 if ((cond_1 and self.spr == 'CREDIT') | cond_2) and self.processed_flag:
                     self.squaring_of_all_position_AT_ONCE()
                     self.processed_flag = False
