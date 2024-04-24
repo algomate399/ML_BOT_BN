@@ -20,6 +20,8 @@ class AlgoTrader_GPT:
         self.ACT_CIR = 0
         self.spr = None
         self.STR_MTM = 0
+        self.target_spread = 0
+        self.target_decay = 0.85
         self.param = {}
         self.overnight_flag = False
         self.trade_flag = True
@@ -36,6 +38,7 @@ class AlgoTrader_GPT:
         OrderMng.LIVE_FEED = self.LIVE_FEED
         self.OrderManger = OrderMng(self.index, mode,self.model_type,self)
         self.expiry = self.expiry_dict[self.symbol]
+
 
     def Is_Valid_time(self):
         valid_time = False
@@ -120,6 +123,7 @@ class AlgoTrader_GPT:
             self.position = self.position if self.OrderManger.net_qty else 0
             if not self.position:
                 self.ACT_CIR = 0
+                self.target_spread = 0
         return success
 
     def Validate_OvernightPosition(self):
@@ -143,6 +147,7 @@ class AlgoTrader_GPT:
                 if not OpenPos.empty:
                     signal = list(set(OpenPos['Signal'].values))[-1]
                     self.spr = list(set(OpenPos['spread'].values))[-1]
+                    self.target_spread = abs(OpenPos['NAV'].sum()) * self.target_decay
                     for instrument in OpenPos['Instrument'].values:
                         strike.append(self.Get_Strike(instrument))
                     # only valid for bull call or put spread strategy
@@ -155,7 +160,8 @@ class AlgoTrader_GPT:
             else:
                 spot = self.LIVE_FEED.get_ltp(self.symbol)
                 cond_1 = (self.ACT_CIR > spot and self.position > 0) | (self.ACT_CIR < spot and self.position < 0)
-                if cond_1 and self.spr == 'CREDIT' and self.processed_flag:
+                cond_2 = (self.STR_MTM >= self.target_spread)
+                if ((cond_1 and self.spr == 'CREDIT') | cond_2) and self.processed_flag:
                     self.squaring_of_all_position_AT_ONCE()
                     self.processed_flag = False
 
