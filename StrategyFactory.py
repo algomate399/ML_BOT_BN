@@ -132,7 +132,7 @@ class AlgoTrader_GPT:
 
     def Exit_position_on_real_time(self):
         time_cond = datetime.now(self.time_zone).time() > datetime.strptime('15:15:00', "%H:%M:%S").time()
-        cond = time_cond if self.model_type == 'short' else time_cond and self.IsExpiry()
+        cond = time_cond if self.model_type == 'short' and self.bias[self.model_type] >=1 else time_cond and self.IsExpiry()
         if cond:
             if self.position:
                 self.squaring_of_all_position_AT_ONCE()
