@@ -74,10 +74,9 @@ class AlgoTrader_GPT:
 
     def Open_position(self):
         signal = 1 if self.model_type == 'long' else -1
-        bias = self.bias[self.model_type]
         if not self.instrument_under_strategy:
             self.param = {}
-            for key, value in OrderParam(signal,self.lot_size[self.index],bias).items():
+            for key, value in OrderParam(signal,self.lot_size[self.index]).items():
                 instrument = self.get_instrument(value['opt'], value['step'], value['expiry'])
                 self.param[instrument] = {'Instrument': instrument, 'Transtype': value['transtype'],
                                           'Qty': value['Qty'],'signal':signal,'spread':value['spread']}
@@ -132,7 +131,7 @@ class AlgoTrader_GPT:
 
     def Exit_position_on_real_time(self):
         time_cond = datetime.now(self.time_zone).time() > datetime.strptime('15:15:00', "%H:%M:%S").time()
-        cond = time_cond if self.model_type == 'short' and self.bias[self.model_type] >=1 else time_cond and self.IsExpiry()
+        cond = time_cond if self.model_type == 'short' else time_cond and self.IsExpiry()
         if cond:
             if self.position:
                 self.squaring_of_all_position_AT_ONCE()
@@ -179,7 +178,7 @@ class AlgoTrader_GPT:
                 self.Validate_OvernightPosition()
                 if not self.scheduler.jobs:
                     self.scheduler.every(5).seconds.do(self.OrderManger.Update_OpenPosition)
-            else:
+            elif self.bias[self.model_type] > 1.0:
                 if not self.position and self.trade_flag and not self.processed_flag and not self.scheduler.jobs:
                     self.scheduler.every(5).seconds.do(self.Open_position)
                     self.processed_flag = True
