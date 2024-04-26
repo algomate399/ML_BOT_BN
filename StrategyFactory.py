@@ -151,7 +151,7 @@ class AlgoTrader_GPT:
                     # only valid for bull call or put spread strategy
                     if self.spr == 'CREDIT':
                         range_ = 50
-                        self.ACT_CIR = np.max(strike) + range_ if signal > 0 else np.min(strike)-range_
+                        self.ACT_CIR = np.min(strike) + range_ if signal > 0 else np.max(strike)-range_
                 else:
                     pass
 
