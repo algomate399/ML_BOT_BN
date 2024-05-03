@@ -107,12 +107,16 @@ class TradingConsole:
                     long_proba.append(self.AlgoTrader[access_long].Generate_Signals())
                     short_proba.append(self.AlgoTrader[access_short].Generate_Signals())
 
-                long_bias = np.sum(long_proba)/np.sum(short_proba)
-                short_bias = np.sum(short_proba)/np.sum(long_proba)
+                long_proba = np.array(long_proba).flatten()
+                short_proba = np.array(short_proba).flatten()
+
+                avg_proba_long = np.sum(long_proba)/len(long_proba)
+                avg_proba_short = np.sum(short_proba)/len(short_proba)
+
+                long_bias = (avg_proba_long > avg_proba_short) & (avg_proba_long > 0.5)
+                short_bias = (avg_proba_long < avg_proba_short) & (avg_proba_short > 0.5)
                 AlgoTrader_GPT.bias = {'long':long_bias, 'short':short_bias}
-                print('bias' , AlgoTrader_GPT.bias)
-                print('long' , long_proba)
-                print('short' , short_proba)
+
                 self.processed_flag = True
 
             for model in self.AlgoTrader:

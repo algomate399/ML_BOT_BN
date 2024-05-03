@@ -76,7 +76,7 @@ class PredictorEngine:
                 feature = proba
             else:
                 feature = np.concatenate((feature, proba), axis=1)
-        pos_proba = self.ensemble_model.predict(feature)
+        pos_proba = self.ensemble_model.predict_proba(feature)[:, 1][-1]
         return pos_proba
 
     def get_prediction(self, n):

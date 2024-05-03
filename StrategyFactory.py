@@ -169,7 +169,7 @@ class AlgoTrader_GPT:
             if predictor.model_type == self.model_type and predictor.symbol == self.symbol:
                 self.Signal_list.append(predictor.GetSignal())
 
-        return sum(self.Signal_list)
+        return self.Signal_list
 
     def On_tick(self):
         # updating the overnight position
@@ -178,7 +178,7 @@ class AlgoTrader_GPT:
                 self.Validate_OvernightPosition()
                 if not self.scheduler.jobs:
                     self.scheduler.every(5).seconds.do(self.OrderManger.Update_OpenPosition)
-            elif self.bias[self.model_type] > 1.0:
+            elif self.bias[self.model_type]:
                 if not self.position and self.trade_flag and not self.processed_flag and not self.scheduler.jobs:
                     self.scheduler.every(5).seconds.do(self.Open_position)
                     self.processed_flag = True
