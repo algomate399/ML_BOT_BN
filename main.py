@@ -110,6 +110,7 @@ class TradingConsole:
                 long_bias = np.sum(long_proba)/np.sum(short_proba)
                 short_bias = np.sum(short_proba)/np.sum(long_proba)
                 AlgoTrader_GPT.bias = {'long':long_bias, 'short':short_bias}
+                print(AlgoTrader_GPT.bias , long_proba  , short_proba)
                 self.processed_flag = True
 
             for model in self.AlgoTrader:
