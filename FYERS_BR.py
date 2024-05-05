@@ -32,7 +32,7 @@ class HIST_BROKER_():
         secret_key = '03HZE67VQN'
         FY_ID = "XT00158"
         TOTP_KEY = "5MI36QR765HXYCG2JMW5OE5SGPEQUBLC"
-        PIN = "2005"
+        PIN = "1990"
 
         URL_SEND_LOGIN_OTP = "https://api-t2.fyers.in/vagator/v2/send_login_otp_v2"
         res = requests.post(url=URL_SEND_LOGIN_OTP, json={"fy_id": getEncodedString(FY_ID), "app_id": "2"}).json()
