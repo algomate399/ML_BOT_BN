@@ -69,18 +69,18 @@
 
 
     .footer {
-      margin-top:10px;
+      margin-top:20px;
       clear: both;
       background-color: #333;
       color: #fff;
-      padding:5px;
+      padding:10px;
     }
     #connectionStatus{color:green;}
 
     .Square_off_strategy{
       font-family: 'Comic Sans MS', cursive, sans-serif;
-      text-align:left;
-      padding:90px;
+      text-align:center;
+      padding:65px;
     }
 
 
@@ -119,45 +119,35 @@
       <h2>Strategy Result</h2>
     <table border="1">
         <tr>
-            <th>Symbol</th>
-            <th>Model_Type</th>
+            <th>STRATEGY</th>
+            <th>STATUS</th>
             <th>POSITION</th>
             <th>MTM</th>
         </tr>
 
         <tr>
-            <td id="symbol_1">N/A</td>
-            <td id="Model_Type_1">N/A</td>
-            <td id="POSITION_1">N/A</td>
-            <td id="MTM_1">N/A</td>
+            <td id="strategy_TREND_EMA">N/A</td>
+            <td id="status_TREND_EMA">N/A</td>
+            <td id="position_TREND_EMA">N/A</td>
+            <td id="mtm_TREND_EMA">N/A</td>
 
         </tr>
 
-            <tr>
-            <td id="symbol_2">N/A</td>
-            <td id="Model_Type_2">N/A</td>
-            <td id="POSITION_2">N/A</td>
-            <td id="MTM_2">N/A</td>
+        <tr>
+            <td id="strategy_SharpeRev">N/A</td>
+            <td id="status_SharpeRev">N/A</td>
+            <td id="position_SharpeRev">N/A</td>
+            <td id="mtm_SharpeRev">N/A</td>
 
-        </tr>
+         </tr>
 
-            <tr>
-            <td id="symbol_3">N/A</td>
-            <td id="Model_Type_3">N/A</td>
-            <td id="POSITION_3">N/A</td>
-            <td id="MTM_3">N/A</td>
+        <tr>
+            <td id="strategy_Volatility_BRK">N/A</td>
+            <td id="status_Volatility_BRK">N/A</td>
+            <td id="position_Volatility_BRK">N/A</td>
+            <td id="mtm_Volatility_BRK">N/A</td>
 
-        </tr>
-
-            <tr>
-            <td id="symbol_4">N/A</td>
-            <td id="Model_Type_4">N/A</td>
-            <td id="POSITION_4">N/A</td>
-            <td id="MTM_4">N/A</td>
-
-        </tr>
-
-
+         </tr>
 
     </table>
       <table border="2">
@@ -181,20 +171,6 @@
         <input type="checkbox" name="Volatility_BRK" value="Volatility_BRK" id="Volatility_BRK"> Volatility_BRK
       </label>
 
-      <label for=3EMA>
-        <input type="checkbox" name="3EMA" value="3EMA" id="3EMA"> 3EMA
-      </label>
-
-      <label for=SPREAD>
-        <input type="checkbox" name="SPREAD" value="SPREAD" id="SPREAD"> SPREAD
-      </label>
-
-      <label for=MEAN_REVERT>
-        <input type="checkbox" name="MEAN_REVERT" value="3EMA" id="MEAN_REVERT"> MEAN_REVERT
-      </label>
-
-
-
 
       <!-- Add more checkboxes for each strategy you have -->
   </div>
@@ -212,6 +188,14 @@
   <br>
   <div class="Square_off_strategy">
     <form method="POST" action="/Square_off_Position">
+        <label for=Square_off_strategy>Select Strategy:</label>
+        <select name="Square_off_strategy" id="Square_off_strategy">
+            <option value="TREND_EMA">TREND_EMA</option>
+            <option value="SharpeRev">SharpeRev</option>
+            <option value="Volatility_BRK">Volatility_BRK</option>
+
+
+        </select>
         <button type="submit">SQUARE-OFF</button>
     </form>
    </div>
@@ -221,19 +205,28 @@
     &copy; 2023 AlgoTrade
   </div>
   <script>
-function fetchPosition() {
-    $.get('/update_positions', function (data) {
-        for (let i = 1; i <= 4; i++) {
-            $(`#symbol_${i}`).text(data[i].symbol);
-            $(`#Model_Type_${i}`).text(data[i].Model_Type);
-            $(`#POSITION_${i}`).text(data[i].POSITION);
-            $(`#MTM_${i}`).text(data[i].MTM);
-        }
-        $('#totalMTM').text(data['TOTAL'].TOTAL_MTM);
-    });
-}
+    function fetchPosition() {
+        $.get('/update_positions', function (data) {
+            $('#strategy_TREND_EMA').text(data['TREND_EMA'].STRATEGY_NAME);
+            $('#status_TREND_EMA').text(data['TREND_EMA'].STATUS);
+            $('#position_TREND_EMA').text(data['TREND_EMA'].POSITION);
+            $('#mtm_TREND_EMA').text(data['TREND_EMA'].MTM);
 
-    setInterval(fetchPosition, 200);
+            $('#strategy_SharpeRev').text(data['SharpeRev'].STRATEGY_NAME);
+            $('#status_SharpeRev').text(data['SharpeRev'].STATUS);
+            $('#position_SharpeRev').text(data['SharpeRev'].POSITION);
+            $('#mtm_SharpeRev').text(data['SharpeRev'].MTM);
+
+            $('#strategy_Volatility_BRK').text(data['Volatility_BRK'].STRATEGY_NAME);
+            $('#status_Volatility_BRK').text(data['Volatility_BRK'].STATUS);
+            $('#position_Volatility_BRK').text(data['Volatility_BRK'].POSITION);
+            $('#mtm_Volatility_BRK').text(data['Volatility_BRK'].MTM);
+
+            $('#totalMTM').text(data['TOTAL'].TOTAL_MTM);
+        });
+    }
+
+    setInterval(fetchPosition, 1000);
 </script>
 
   <script>
@@ -249,7 +242,7 @@ function fetchPosition() {
     }
 
     // Update the tick data every 5 seconds (adjust the interval as needed)
-    setInterval(updateTickData, 200);
+    setInterval(updateTickData, 1000);
   </script>
    <script>
         // Your existing JavaScript code
@@ -280,11 +273,6 @@ function fetchPosition() {
         const isTREND_EMASelected = document.querySelector('input[name="TREND_EMA"]').checked;
         const isSharpRevSelected = document.querySelector('input[name="SharpeRev"]').checked;
         const isVolatility_BRKSelected = document.querySelector('input[name="Volatility_BRK"]').checked;
-        const is3EMASelected = document.querySelector('input[name="3EMA"]').checked;
-        const isSPREADSelected = document.querySelector('input[name="SPREAD"]').checked;
-        const isMEAN_REVERTSelected = document.querySelector('input[name="MEAN_REVERT"]').checked;
-
-        const selectedMode = document.querySelector('input[name="radioOption"]:checked').value;
 
 
         // Create the selected strategy
@@ -292,9 +280,6 @@ function fetchPosition() {
             'TREND_EMA': isTREND_EMASelected,
             'SharpeRev': isSharpRevSelected,
             'Volatility_BRK':isVolatility_BRKSelected,
-             '3EMA':is3EMASelected,
-              'SPREAD':isSPREADSelected,
-              'MEAN_REVERT':isMEAN_REVERTSelected
             };
 
         // Make a POST request to /on_connect with the selected_strategy
@@ -302,7 +287,6 @@ function fetchPosition() {
             method: 'POST',
             body: JSON.stringify({
                 'selected_strategy': STRATEGY_SELECTED,
-                 'Mode':selectedMode,
             }),  headers: {'Content-Type': 'application/json',},
         })
         .then(response => response.text())
