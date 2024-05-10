@@ -115,6 +115,9 @@ class PredictorEngine:
         elif self.strategy_name == 'SPREAD':
             self.normalized_features, regime_input = self.SPREAD_(**params)
 
+        elif self.strategy_name == 'Volatility_Spr':
+            self.normalized_features, regime_input = self.Volatility_Spr(**params)
+
         elif self.strategy_name == 'SharpeRev':
             self.normalized_features, regime_input = self.SharpeRev(**params)
 
@@ -466,6 +469,73 @@ class PredictorEngine:
         #       volatility Regime
         VolatilityRegime = self.VolatilityRegime()
         return normalized_features, VolatilityRegime.loc[normalized_features.index]
+
+    def Volatility_Spr(self, window, lookback_1, lookback_2, normal_window, lags):
+        dt_1 = self.data
+        dt_2 = self.TICKER.get_data(self.Components[0], f'{self.interval}')
+        vix = self.TICKER.get_data(self.Components[1],f'{self.interval}')
+
+        # initialization of variables
+        features = pd.DataFrame()
+
+        #   calculating indicator ,
+        rsi = ta.rsi(dt_1['close'], window)
+        adx = ta.adx(dt_1['high'], dt_1['low'], dt_1['close'], window).iloc[:, 0]
+        rsi_sharpe = (rsi - rsi.rolling(window=window).mean()) / rsi.rolling(window=window).std()
+        adx_sharpe = (adx - adx.rolling(window=window).mean()) / adx.rolling(window=window).std()
+
+        rsi_cmp = ta.rsi(dt_2['close'], window)
+        adx_cmp = ta.adx(dt_2['high'], dt_2['low'], dt_2['close'], window).iloc[:, 0]
+        rsi_sharpe_cmp = (rsi_cmp - rsi_cmp.rolling(window=window).mean()) / rsi_cmp.rolling(window=window).std()
+        adx_sharpe_cmp = (adx_cmp - adx_cmp.rolling(window=window).mean()) / adx_cmp.rolling(window=window).std()
+
+        smooth_price = dt_1['close'].ewm(span=window).mean()
+        slope_1 = ta.slope(smooth_price, lookback_1)
+        slope_2 = ta.slope(smooth_price, lookback_2)
+
+        vol_1 = dt_1['close'].ewm(span=window).std()
+        vol_2 = dt_2['close'].ewm(span=window).std()
+        vol_spr = (vol_2 - vol_1) / vol_1
+
+        smooth_price_cmp = dt_2['close'].ewm(span=window).mean()
+        slope_1_cmp = ta.slope(smooth_price_cmp, lookback_1)
+        slope_2_cmp = ta.slope(smooth_price_cmp, lookback_2)
+
+        # setting features
+        features['pct_change'] = dt_1['close'].pct_change()
+        features['range_vs_close'] = (dt_1['close'] - dt_1['low']) / (dt_1['high'] - dt_1['low'])
+        features['rsi_sharpe'] = rsi_sharpe
+        features['adx_sharpe'] = adx_sharpe
+        features['slope_1'] = slope_1
+        features['slope_2'] = slope_2
+
+        # setting cmp features
+        features['pct_change_cmp'] = dt_2['close'].pct_change()
+        features['range_vs_close_cmp'] = (dt_2['close'] - dt_2['low']) / (dt_2['high'] - dt_2['low'])
+        features['rsi_sharpe_cmp'] = rsi_sharpe_cmp
+        features['adx_sharpe_cmp'] = adx_sharpe_cmp
+        features['vol_spr'] = vol_spr
+        features['slope_1_cmp'] = slope_1_cmp
+        features['slope_2_cmp'] = slope_2_cmp
+
+        features['Vix'] = vix['close']
+
+        #  calculating lagged features
+        if lags:
+            lag_values = pd.DataFrame()
+            for col in features.columns:
+                for lag in range(1, lags + 1):
+                    lag_values[f'{col}_{lag}'] = features[col].shift(lag)
+                    #       concatenate the feature and lag features
+            features = pd.concat([features, lag_values], axis=1)
+
+        #       normalization the features
+        normalized_features = self.Normalization(features, normal_window, True)
+        normalized_features['dayofweek'] = normalized_features.index.dayofweek
+        #       volatility Regime
+        VolatilityRegime = self.VolatilityRegime()
+        return normalized_features, VolatilityRegime.loc[normalized_features.index]
+
 
     def Regimer(self, regime_input):
         # Volatility Regime
