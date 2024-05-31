@@ -68,7 +68,7 @@ class TICKER_:
     def get_data(self,symbol,interval):
         try:
             if interval == 'D':
-                today = datetime.now().date()
+                today = datetime.now(self.time_zone).date()
                 resample = self.ticker_space[symbol]
                 resample = resample.loc[resample.index.date != today]
             else:
