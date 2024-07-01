@@ -115,7 +115,7 @@ class PredictorEngine:
         elif self.strategy_name == 'SPREAD':
             self.normalized_features, regime_input = self.SPREAD_(**params)
 
-        elif self.strategy_name == 'Volatility_Spr':
+        elif (self.strategy_name == 'Volatility_Spr') | (self.strategy_name == 'Volatility_NF_Spr'):
             self.normalized_features, regime_input = self.Volatility_Spr(**params)
 
         elif self.strategy_name == 'SharpeRev':
@@ -535,7 +535,6 @@ class PredictorEngine:
         #       volatility Regime
         VolatilityRegime = self.VolatilityRegime()
         return normalized_features, VolatilityRegime.loc[normalized_features.index]
-
 
     def Regimer(self, regime_input):
         # Volatility Regime
