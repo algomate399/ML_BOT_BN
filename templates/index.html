@@ -190,8 +190,13 @@
       </label>
 
       <label for=MEAN_REVERT>
-        <input type="checkbox" name="MEAN_REVERT" value="3EMA" id="MEAN_REVERT"> MEAN_REVERT
+        <input type="checkbox" name="MEAN_REVERT" value="MEAN_REVERT" id="MEAN_REVERT"> MEAN_REVERT
       </label>
+
+      <label for=MEAN_REVERT_BNF>
+        <input type="checkbox" name="MEAN_REVERT_BNF" value="MEAN_REVERT_BNF" id="MEAN_REVERT_BNF"> MEAN_REVERT_BNF
+      </label>
+
 
       <label for=Volatility_Spr>
         <input type="checkbox" name="Volatility_Spr" value="Volatility_Spr" id="Volatility_Spr"> Volatility_Spr
@@ -288,6 +293,7 @@ function fetchPosition() {
         const is3EMASelected = document.querySelector('input[name="3EMA"]').checked;
         const isSPREADSelected = document.querySelector('input[name="SPREAD"]').checked;
         const isMEAN_REVERTSelected = document.querySelector('input[name="MEAN_REVERT"]').checked;
+        const isMEAN_REVERT_BNFSelected = document.querySelector('input[name="MEAN_REVERT_BNF"]').checked;
         const isVolatility_SprSelected = document.querySelector('input[name="Volatility_Spr"]').checked;
         const isVolatility_NF_SprSelected = document.querySelector('input[name="Volatility_NF_Spr"]').checked;
 
@@ -304,6 +310,7 @@ function fetchPosition() {
              '3EMA':is3EMASelected,
               'SPREAD':isSPREADSelected,
               'MEAN_REVERT':isMEAN_REVERTSelected,
+              'MEAN_REVERT_BNF':isMEAN_REVERT_BNFSelected,
               'Volatility_Spr':isVolatility_SprSelected,
               'Volatility_NF_Spr':isVolatility_NF_SprSelected
             };
