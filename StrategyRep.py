@@ -121,7 +121,7 @@ class PredictorEngine:
         elif self.strategy_name == 'SharpeRev':
             self.normalized_features, regime_input = self.SharpeRev(**params)
 
-        elif self.strategy_name == 'MEAN_REVERT':
+        elif (self.strategy_name == 'MEAN_REVERT') | (self.strategy_name == 'MEAN_REVERT_BNF'):
             self.normalized_features, regime_input = self.MEAN_REVERT(**params)
 
         elif self.strategy_name == 'Volatility_BRK':

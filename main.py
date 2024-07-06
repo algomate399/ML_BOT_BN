@@ -18,13 +18,14 @@ import pandas as pd
 # Class for for handling user Interface
 TICKER_TO_SUB = {'NSE:NIFTYBANK-INDEX':'D','NSE:NIFTY50-INDEX':'D','NSE:INDIAVIX-INDEX':'D'}
 
-Strategy_On_params = {'TREND_EMA': {'ticker': 'NSE:NIFTYBANK-INDEX','Components':['NSE:NIFTY50-INDEX'], 'interval': 'D'},
-                      'SharpeRev': {'ticker':'NSE:NIFTYBANK-INDEX','Components': None,'interval': 'D'},
-                      'Volatility_BRK': {'ticker': 'NSE:NIFTY50-INDEX', 'Components': None, 'interval': 'D'},
+Strategy_On_params = { 'TREND_EMA': {'ticker': 'NSE:NIFTYBANK-INDEX','Components':['NSE:NIFTY50-INDEX'], 'interval': 'D'},
+                       'SharpeRev': {'ticker':'NSE:NIFTYBANK-INDEX','Components': None,'interval': 'D'},
+                       'Volatility_BRK': {'ticker': 'NSE:NIFTY50-INDEX', 'Components': None, 'interval': 'D'},
                        '3EMA': {'ticker': 'NSE:NIFTY50-INDEX', 'Components': None, 'interval': 'D'},
                        'SPREAD': {'ticker': 'NSE:NIFTYBANK-INDEX', 'Components': ['NSE:NIFTY50-INDEX'], 'interval': 'D'},
                        'MEAN_REVERT': {'ticker': 'NSE:NIFTY50-INDEX', 'Components': None, 'interval': 'D'},
-                        'Volatility_Spr': {'ticker': 'NSE:NIFTYBANK-INDEX', 'Components': ['NSE:NIFTY50-INDEX','NSE:INDIAVIX-INDEX'], 'interval': 'D'},
+                       'MEAN_REVERT_BNF' : {'ticker' : 'NSE:NIFTYBANK-INDEX' , 'Components' : None , 'interval' : 'D'} ,
+                       'Volatility_Spr': {'ticker': 'NSE:NIFTYBANK-INDEX', 'Components': ['NSE:NIFTY50-INDEX','NSE:INDIAVIX-INDEX'], 'interval': 'D'},
                        'Volatility_NF_Spr' : {'ticker' : 'NSE:NIFTY50-INDEX' ,'Components' : ['NSE:NIFTYBANK-INDEX' , 'NSE:INDIAVIX-INDEX'] ,'interval' : 'D'}
                       }
 

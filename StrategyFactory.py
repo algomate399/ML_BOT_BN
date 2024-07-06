@@ -40,7 +40,6 @@ class AlgoTrader_GPT:
         self.OrderManger = OrderMng(self.index, mode,self.model_type,self)
         self.expiry = self.expiry_dict[self.symbol]
 
-
     def Is_Valid_time(self):
         valid_time = False
         current_time = datetime.now(self.time_zone).time()

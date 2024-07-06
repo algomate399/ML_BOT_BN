@@ -74,7 +74,7 @@ class TICKER_:
             else:
                 resample = self.ticker_space[symbol].resample(f'{interval}', origin='2017-01-02 09:15').agg(
                     {'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last', 'volume': 'sum'}).dropna()
-                resample.iloc[-1]
+
 
             return resample
 
