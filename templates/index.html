@@ -1,0 +1,145 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Algomate</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+
+  <style>
+    /* CSS styles can be applied to divs for layout and styling */
+    .header {
+      background-color: #333;
+      color: #e8a413;
+      padding: 8px;
+      font-family: 'Comic Sans MS', cursive, sans-serif; /* Change the font family to Comic Sans MS with fallbacks */
+
+    }
+    .sidebar {
+      font-family: 'Comic Sans MS', cursive, sans-serif; /* Change the font family to Comic Sans MS with fallbacks */
+      font-size:15px;
+      float: left;
+      width: 50%;
+      background-color: #f2f2f2;
+      padding: 50px;
+
+    }
+
+    .content {
+      text-align:center;
+
+    }
+
+    .label {
+      display: inline-block; /* Display labels side by side */
+      width: 180px; /* Set a fixed width for the labels */
+      margin-left: 80px; /* Add margin to create space between labels */
+      font-family: 'Comic Sans MS', cursive, sans-serif; /* Change the font family to Comic Sans MS with fallbacks */
+    }
+
+
+    .footer {
+      margin-top:10px;
+      clear: both;
+      background-color: #333;
+      color: #fff;
+      padding:5px;
+    }
+    #connectionStatus{color:green;}
+
+
+  </style>
+
+<body>
+  <div class="header">
+    <h1>{{title}}</h1>
+  </div>
+
+  <div class="sidebar">
+    <h2>Engine</h2>
+      <div class="sidebar-item">
+        <label for="passkey">Passkey:</label>
+        <input type="password" id="passkey" name="passkey">
+        <button onclick="on_connect()">Connect</button>
+      </div>
+        <div id="connectionStatus"></div>
+
+        <div class="performance-report-link">
+          <a href="https://result.streamlit.app" target="_blank">Performance Report</a>
+    </div>
+  </div>
+
+
+  <div class="footer">
+    &copy; 2023 Algomate
+  </div>
+
+  <script>
+    function on_connect() {
+        const connectionStatus = document.getElementById('connectionStatus');
+        const passkey = document.getElementById('passkey').value;
+        connectionStatus.textContent = 'Connecting...'; // Display a message while connecting
+
+
+        // Make a POST request to /on_connect with the selected_strategy
+        fetch('/on_connect', {
+            method: 'POST',
+            body: JSON.stringify({
+                 'passkey': passkey,
+            }),  headers: {'Content-Type': 'application/json',},
+        })
+        .then(response => response.text())
+        .then(data => {
+            console.log(data);
+            connectionStatus.textContent =data;
+        })
+        .catch(error => {
+            console.error(error);
+            // Update the status message to show an error if needed
+            connectionStatus.textContent = 'Connection failed';
+        });
+    }
+</script>
+
+<script>
+    function push_signal() {
+        const connectionStatus = document.getElementById('connectionStatus');
+        const passkey = document.getElementById('passkey').value;
+        connectionStatus.textContent = 'processing...'; // Display a message while connecting
+
+
+        // Make a POST request to /on_connect with the selected_strategy
+        fetch('/push_signal', {
+            method: 'POST',
+            body: JSON.stringify({
+                 'passkey': passkey,
+            }),  headers: {'Content-Type': 'application/json',},
+        })
+        .then(response => response.text())
+        .then(data => {
+            console.log(data);
+            connectionStatus.textContent =data;
+        })
+        .catch(error => {
+            console.error(error);
+            // Update the status message to show an error if needed
+            connectionStatus.textContent = 'Connection failed';
+        });
+    }
+</script>
+
+
+
+
+<script>
+        function setInitialConnectionStatus() {
+        $.get('/get_connection_status', function (data) {
+            const connectionStatus = document.getElementById('connectionStatus');
+            connectionStatus.textContent = data;
+        });
+    }
+
+ setInitialConnectionStatus();
+</script>
+</body>
+</html>
