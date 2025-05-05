@@ -1,1 +1,0 @@
-[{"lags": 5, "lookback_1": 8, "lookback_2": 39, "normal_window": 150, "window": 20}, {"lags": 5, "lookback_1": 8, "lookback_2": 11, "normal_window": 73, "window": 5}, {"lags": 0, "lookback_1": 3, "lookback_2": 16, "normal_window": 132, "window": 5}, {"lags": 5, "lookback_1": 8, "lookback_2": 55, "normal_window": 50, "window": 19}]
