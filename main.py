@@ -74,8 +74,8 @@ def On_connect():
 
             # Add tasks to the scheduler
             scheduler.add_job(ConnectApp,trigger='date' , run_date=datetime.now() + timedelta(seconds =5))
-            scheduler.add_job(primary_task, CronTrigger(hour=9, minute=30, timezone=timezone('Asia/Kolkata'), day_of_week='mon-sat'))
-            scheduler.add_job(secondary_task, CronTrigger(hour=9, minute=20, timezone=timezone('Asia/Kolkata'), day_of_week='mon-fri'))
+            scheduler.add_job(primary_task, CronTrigger(hour=22, minute=15, timezone=timezone('Asia/Kolkata'), day_of_week='mon-sat'))
+            scheduler.add_job(secondary_task, CronTrigger(hour=22, minute=0, timezone=timezone('Asia/Kolkata'), day_of_week='mon-fri'))
 
             # Start the scheduler
             scheduler.start()
