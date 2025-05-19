@@ -70,6 +70,7 @@ class MetaApi:
                 try:
                     file_path=os.path.join('database_fx' , symbol , '{}'.format(symbol))
                     history = GetHistory(symbol)
+                    history=history[history.index.date != datetime.now(self.time_zone).today().date()]
                     history.to_csv(file_path)
                     self.Symbol_historyUpdates.append(symbol)
                     break
