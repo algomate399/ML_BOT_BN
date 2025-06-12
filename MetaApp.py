@@ -73,6 +73,7 @@ class MetaApi:
                     history=history[history.index.date != datetime.now(self.time_zone).today().date()]
                     history.to_csv(file_path)
                     self.Symbol_historyUpdates.append(symbol)
+                    time.sleep(2)
                     break
                 except Exception as e:
                         u+=1
@@ -91,6 +92,7 @@ class MetaApi:
                 for key , model in self.models.items() :
                     if key.split('_')[-1] == ticker :
                         sig+=model.GetPrediction()
+                        time.sleep(5)
 
                 self.Signals[ticker]=sig
 
@@ -104,6 +106,7 @@ class MetaApi:
 
                 if signal:
                    self.api.place_order(symbol , 0.01 , signal)
+                   time.sleep(3)
         
             except Exception as e:
                    self.error='Error:@Place_Order:Signals:{}.Error:{}'.format(signal , e)
