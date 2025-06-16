@@ -29,6 +29,7 @@ async def secondary_task():
     MetaApp.Refresh_Var()
     await MetaApp.UpdateHistory()
     MetaApp.GenerateSignals()
+    print(MetaApp.Signals)
     MetaApp.place_order()
     if MetaApp.error:
         MetaApp.send_email_notification(MetaApp.error)
@@ -74,8 +75,8 @@ def On_connect():
 
             # Add tasks to the scheduler
             scheduler.add_job(ConnectApp,trigger='date' , run_date=datetime.now() + timedelta(seconds =5))
-            scheduler.add_job(primary_task, CronTrigger(hour=1, minute=50, timezone=timezone('Asia/Kolkata'), day_of_week='tue-sat'))
-            scheduler.add_job(secondary_task, CronTrigger(hour=2, minute=35, timezone=timezone('Asia/Kolkata'), day_of_week='mon-fri'))
+            scheduler.add_job(primary_task, CronTrigger(hour=10, minute=0, timezone=timezone('Asia/Kolkata'), day_of_week='tue-sat'))
+            scheduler.add_job(secondary_task, CronTrigger(hour=10, minute=5, timezone=timezone('Asia/Kolkata'), day_of_week='mon-fri'))
 
             # Start the scheduler
             scheduler.start()
