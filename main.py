@@ -29,7 +29,7 @@ async def secondary_task():
     MetaApp.Refresh_Var()
     await MetaApp.UpdateHistory()
     MetaApp.GenerateSignals()
-    print(MetaApp.Signals)
+    print('Signal', MetaApp.Signals)
     MetaApp.place_order()
     if MetaApp.error:
         MetaApp.send_email_notification(MetaApp.error)
