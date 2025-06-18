@@ -166,9 +166,9 @@ class PredictorEngine:
 
     def generate_features(self, params):
         normalize_features = None
-        if self.strategy_name=='MomTrading_{}'.format(self.symbol):
+        if self.strategy_name=='MomTrading_{}'.format(self.symbol) or self.strategy_name=='MeanTrading_{}'.format(self.symbol):
             normalize_features = self.MomTrading(**params)
-    
+
         return normalize_features.tail(5)
 
     def GetPrediction(self) :

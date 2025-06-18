@@ -11,7 +11,10 @@ tp_pips = {'EURUSD':100,'XAUUSD':2300 , 'GBPUSD':120 ,'NZDUSD':100 , 'AUDUSD':10
 
 # defining strategy parameters
 params_1 = [{'strategy': 'MomTrading', 'Components': None, 'interval': 'D'}]
-Strategy_On_params = {'EURUSD':params_1 , 'XAUUSD':params_1 ,'GBPUSD':params_1 , 'NZDUSD':params_1 , 'AUDUSD':params_1}
+params_2 = [{'strategy': 'MomTrading', 'Components': None, 'interval': 'D'},
+            {'strategy': 'MeanTrading', 'Components': None, 'interval': 'D'}]
+
+Strategy_On_params = {'EURUSD':params_2 , 'XAUUSD':params_1 ,'GBPUSD':params_1 , 'NZDUSD':params_2 , 'AUDUSD':params_2}
 
 
 def load_csv(symbol ,drop_date=None):
