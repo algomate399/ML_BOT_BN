@@ -48,6 +48,11 @@ class CtraderApi:
         self.api.subscribe(*self.symbol_list)
         await asyncio.sleep(3)
 
+    async def logoutApp(self):
+         if self.api.isconnected():
+            self.api.logout()
+            await asyncio.sleep(2)
+
     def GetQuotes(self , symbol , volume ,side):
         var='ask' if side > 0 else 'bid'
         vol =volume / 1000 if symbol == 'XAUUSD' else volume

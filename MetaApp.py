@@ -39,6 +39,9 @@ class MetaApi:
         self.api = CtraderApi(symbol_list=self.symbol_list , sl=sl_pips , tp=tp_pips)
         await self.api.loadApp()
 
+    async def logoutApp(self):
+        self.api.logoutApp()
+
     def Refresh_Var(self) :
         self.Symbol_historyUpdates=[]
         self.error=None
