@@ -22,18 +22,13 @@ MetaApp = MetaApi()
 async def primary_task():
     await MetaApp.loadApp()
     MetaApp.close_the_pending_positions()
-    print('Close Positions Done')
 
 async def secondary_task():
     MetaApp.Refresh_Var()
     await MetaApp.UpdateHistory()
-    print('UpdateHistory Done')
     MetaApp.GenerateSignals()
-    print(MetaApp.Signals)
 
     MetaApp.place_order()
-    print('Order Placed')
-    
     if MetaApp.error:
         MetaApp.send_email_notification(MetaApp.error)
     else:
