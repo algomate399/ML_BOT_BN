@@ -20,7 +20,9 @@ setattr(__main__ , 'BaggingBootstrapper' ,BaggingBootstrapper)
 MetaApp = MetaApi()
 
 async def primary_task():
+    print("---loading---")
     await MetaApp.loadApp()
+    print("---APP:CONNECTED---")
     MetaApp.close_the_pending_positions()
     print('Position closed' , MetaApp.error)
 
