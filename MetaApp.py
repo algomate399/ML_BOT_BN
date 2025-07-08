@@ -116,7 +116,7 @@ class MetaApi:
 
     def close_the_pending_positions(self):
         self.api.api.close_all()
-        self.api.api.cancel_all()
+
 
     def send_email_notification(self ,subject):
 
