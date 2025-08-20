@@ -5,16 +5,15 @@ import numpy as np
 from hurst import compute_Hc
 from sklearn.linear_model import LinearRegression
 
-# stoploss and takeprofit
-sl_pips = {'EURUSD':75,'XAUUSD':1700 , 'GBPUSD':75 , 'NZDUSD':75  ,'AUDUSD':75}
-tp_pips = {'EURUSD':100,'XAUUSD':2300 , 'GBPUSD':120 ,'NZDUSD':100 , 'AUDUSD':100}
+
+# sl and tp points
+sl_pips = {'EURUSD':75,'XAUUSD':1700 , 'GBPUSD':75 , 'AUDUSD':75 , 'NZDUSD':75}
+tp_pips = {'EURUSD':100,'XAUUSD':2300 , 'GBPUSD':120 ,'AUDUSD':120 , 'NZDUSD':100}
+
 
 # defining strategy parameters
 params_1 = [{'strategy': 'MomTrading', 'Components': None, 'interval': 'D'}]
-params_2 = [{'strategy': 'MomTrading', 'Components': None, 'interval': 'D'},
-            {'strategy': 'MeanTrading', 'Components': None, 'interval': 'D'}]
-
-Strategy_On_params = {'EURUSD':params_2 , 'XAUUSD':params_1 ,'GBPUSD':params_1 , 'NZDUSD':params_2 , 'AUDUSD':params_2}
+Strategy_On_params = {'EURUSD':params_1 , 'AUDUSD':params_1 , 'XAUUSD':params_1 , 'NZDUSD':params_1 , 'GBPUSD':params_1}
 
 
 def load_csv(symbol ,drop_date=None):
@@ -30,17 +29,16 @@ def get_ensemble_n(strategy_name):
     with open(path, 'r') as f:
         params = json.load(f)
 
-    VolThres = params[-1]['VolThres']
-    params = params[:-1]
-    return params, VolThres , len(params)
+    return params , len(params)
 
 # indicator function
 def TrendIntensityIndex(dt , window):
     ma = dt.rolling(window=window).mean()
-    day_above_average = (dt>ma).rolling(window = window).sum()
+    day_above_average = (dt>ma).rolling(window=window).sum()
     return 100* day_above_average/window
 
-def calculate_MOM_Burst( dt ,  lookback  ):
+
+def calculate_MOM_Burst( dt ,  lookback):
 #    calculating the indicator mom burst
     candle_range = dt['high']-dt['low']
     mean_range = candle_range.rolling(window  = lookback).mean()

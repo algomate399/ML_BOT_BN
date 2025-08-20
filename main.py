@@ -1,50 +1,48 @@
-
 from ClassLib import *
 from MetaApp import MetaApi
+import __main__
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from flask import Flask, render_template,request
 import threading
 import asyncio
 from pytz import timezone
-from datetime import datetime , timedelta
-import __main__
-
 
 # setting Attributes to Main
-setattr(__main__ , 'VolatilityScaler' , VolatilityScaler)
 setattr(__main__ , 'NoiseEnhancer' ,NoiseEnhancer)
 setattr(__main__ , 'BaggingBootstrapper' ,BaggingBootstrapper)
 
+currency = ['EURUSD' ,'GBPUSD' , 'AUDUSD' , 'NZDUSD']
+metals = ['XAUUSD']
 
-MetaApp = MetaApi()
+fx = MetaApi()
 
-async def primary_task():
-    print("---loading---")
-    await MetaApp.loadApp()
-    print("---APP:CONNECTED---")
-    MetaApp.close_the_pending_positions()
-    print('Position closed' , MetaApp.error)
+def CheckConnection():
+    fx.connector.IS_CONNECTION_ALIVE()
+    if not fx.connector.connection_status:
+       fx.connector.Get_CONNECTED()
 
-async def secondary_task():
-    MetaApp.Refresh_Var()
-    
-    await MetaApp.UpdateHistory()
-    print('Update History' , MetaApp.error )
-    
-    MetaApp.GenerateSignals()
-    print(MetaApp.Signals , MetaApp.error)
-    
-    MetaApp.place_order()
-    print('Order Placed' ,  MetaApp.error)
-    
-    if MetaApp.error:
-        MetaApp.send_email_notification(MetaApp.error)
+
+def primary_task_1():
+    CheckConnection()
+    fx.connector.close_all_positions(metals)
+
+def primary_task_2():
+    CheckConnection()
+    fx.connector.close_all_positions(currency)
+
+def secondary_task():
+    CheckConnection()
+    fx.UpdateHistory()
+    fx.GenerateSignals()
+    fx.place_order()
+
+    if fx.error:
+        fx.send_email_notification(fx.error)
+    elif fx.connector.error:
+        fx.send_email_notification(fx.connector.error)
     else:
-        msg='Signal Generated:{}'.format(MetaApp.Signals)
-        MetaApp.send_email_notification(msg)
-
-    await MetaApp.logoutApp()
+        fx.send_email_notification(fx.Signals)
 
 
 app = Flask(__name__)
@@ -83,8 +81,9 @@ def On_connect():
             scheduler = AsyncIOScheduler(event_loop=loop)
 
             # Add tasks to the scheduler
-            scheduler.add_job(primary_task, CronTrigger(hour=1, minute=50, timezone=timezone('Asia/Kolkata'), day_of_week='tue-sat'))
-            scheduler.add_job(secondary_task, CronTrigger(hour=3, minute=30, timezone=timezone('Asia/Kolkata'), day_of_week='mon-fri'))
+            scheduler.add_job(primary_task_1, CronTrigger(hour=2, minute=25, timezone=timezone('Asia/Kolkata'), day_of_week='tue-sat'))
+            scheduler.add_job(primary_task_2, CronTrigger(hour=3, minute=25, timezone=timezone('Asia/Kolkata'), day_of_week='tue-sat'))
+            scheduler.add_job(secondary_task, CronTrigger(hour=3, minute=33, timezone=timezone('Asia/Kolkata'), day_of_week='mon-fri'))
 
             # Start the scheduler
             scheduler.start()
@@ -115,12 +114,5 @@ def get_connection_status():
 
 if __name__ == '__main__':
     app.run(debug=True)
-
-
-# async def run():
-#        await primary_task()
-#        await secondary_task()
-#
-# asyncio.run(run())
 
 

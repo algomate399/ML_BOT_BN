@@ -51,7 +51,7 @@ class BaggingBootstrapper(BaseEstimator , ClassifierMixin) :
 
 
 class NoiseEnhancer(BaseEstimator , TransformerMixin) :
-    def __init__(self , mu=0.0 , sigma=0.0 , skip_cols=[] , random_state=None) :
+    def __init__(self , mu=0.0 , sigma=0.0 , skip_cols=['_VOL_RAW_REG_'] , random_state=None) :
         self.mu=mu
         self.sigma=sigma
         self.skip_cols=skip_cols
@@ -70,27 +70,4 @@ class NoiseEnhancer(BaseEstimator , TransformerMixin) :
 
     def transform(self , X , y=None) :
         return X
-
-
-class VolatilityScaler(BaseEstimator , TransformerMixin) :
-    def __init__(self , xi , c=3.0 , col_name='_VOL_RAW_REG_' , skip_cols=[] , transformer=False) :
-        self.c=c
-        self.transformer=transformer
-        self.skip_cols=skip_cols
-        self.col_name=col_name
-        self.xi=self.transformer(xi) if self.transformer else xi
-        self.col=None
-
-    def fit(self , x , y=None) :
-        self.col=[c for c in x.columns if c not in self.skip_cols+[self.col_name]]
-        return self
-
-    def transform(self , X) :
-        X=X.copy()
-        yi=self.transformer(X[self.col_name]) if self.transformer else X[self.col_name]
-
-        sigma=(yi / self.xi).clip(upper=self.c)
-        X[self.col]=X[self.col].div(sigma , axis=0)
-        return X.drop(self.col_name , axis=1)
-
 

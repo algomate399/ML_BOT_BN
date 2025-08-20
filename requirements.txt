@@ -12,4 +12,4 @@ hurst
 secure-smtplib
 flask
 pytz
-ejtraderCT==1.1.13
+hmmlearn==0.3.2
