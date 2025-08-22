@@ -13,3 +13,5 @@ secure-smtplib
 flask
 pytz
 hmmlearn==0.3.2
+ctrader_open_api==0.9.2
+twisted==24.3.0
