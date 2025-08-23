@@ -2,7 +2,7 @@ import numpy as np
 import os
 import pytz
 import time
-import datetime
+from datetime import datetime
 import smtplib
 from email.mime.text import MIMEText
 import requests
@@ -20,6 +20,16 @@ class MetaApi:
         self.Signals ={}
         self.symbol_list=np.unique([ticker for ticker in Strategy_On_params])
         self.load_Strategy()
+
+        # email setups
+        self.bot_name='FxMate-GPT(AI DRIVEN MODEL)'
+        self.sender_mail='algomate399@gmail.com'
+        self.sender_pass='eddx tpyl sggx ryfr'
+        self.recipient_mail='tapasguha258@gmail.com'
+
+        # sending email response :
+        msg='Engine refreshed @ :{}'.format(datetime.now(self.time_zone))
+        self.send_email_notification(msg)
 
     def Refresh_Var(self):
         self.error=None
@@ -73,4 +83,23 @@ class MetaApi:
 
         except Exception as e:
             self.error="Error:@GEN_SIGNALS:{}".format(e)
+            print(self.error)
+
+    def send_email_notification(self ,subject):
+
+        msg_body = (f"Bot:{self.bot_name}\n"
+                    f"Subject:{subject}")
+
+        msg = MIMEText(msg_body)
+        msg['Subject'] = f'{self.bot_name}:Response as on:'
+        msg['From'] = self.sender_mail
+        msg['To'] = self.recipient_mail
+
+        try:
+            with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+                server.login(self.sender_mail,self.sender_pass)
+                server.sendmail(self.sender_mail, self.recipient_mail, msg.as_string())
+
+        except Exception as e:
+            self.error = f'Error:{e}'
             print(self.error)

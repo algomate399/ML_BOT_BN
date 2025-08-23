@@ -46,6 +46,11 @@ def secondary_task():
             fx.Signals = api.Signals
             fx.start()
 
+        if api.error :
+            api.send_email_notification(api.error)
+        else :
+            api.send_email_notification(api.Signals)
+
 
 app = Flask(__name__)
 connected = False
