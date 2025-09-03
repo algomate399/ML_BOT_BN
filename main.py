@@ -93,7 +93,7 @@ def On_connect():
             #                                                day_of_week='tue-sat'))
             # scheduler.add_job(primary_task_2 , CronTrigger(hour=3 , minute=25 , timezone=timezone('Asia/Kolkata') ,
             #                                                day_of_week='tue-sat'))
-            scheduler.add_job(secondary_task , CronTrigger(hour=14 , minute=20 , timezone=timezone('Asia/Kolkata') ,
+            scheduler.add_job(secondary_task , CronTrigger(hour=14 , minute=40 , timezone=timezone('Asia/Kolkata') ,
                                                            day_of_week='mon-fri'))
 
             # Start the scheduler
@@ -123,6 +123,7 @@ def get_connection_status():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
 
 
 
