@@ -87,11 +87,11 @@ def On_connect():
             scheduler = AsyncIOScheduler(event_loop=loop)
 
             # Add tasks to the scheduler
-            scheduler.add_job(primary_task_1 , CronTrigger(hour=20 , minute=57 , timezone=timezone('Asia/Kolkata') ,
+            scheduler.add_job(primary_task_1 , CronTrigger(hour=21 , minute=20 , timezone=timezone('Asia/Kolkata') ,
                                                            day_of_week='tue-sat'))
             # scheduler.add_job(primary_task_2 , CronTrigger(hour=3 , minute=25 , timezone=timezone('Asia/Kolkata') ,
             #                                                day_of_week='tue-sat'))
-            scheduler.add_job(secondary_task , CronTrigger(hour=21 , minute=2 , timezone=timezone('Asia/Kolkata') ,
+            scheduler.add_job(secondary_task , CronTrigger(hour=21 , minute=25 , timezone=timezone('Asia/Kolkata') ,
                                                            day_of_week='mon-fri'))
 
             # Start the scheduler
@@ -120,6 +120,7 @@ def get_connection_status():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
 
 
 
