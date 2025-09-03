@@ -97,7 +97,7 @@ class ForexApi:
                 "relativeStopLoss" : sl
             }
         }
-        print(payload)
+
         await ws.send(json.dumps(payload))
 
     def compute_lot_size(self) :
@@ -162,8 +162,6 @@ class ForexApi:
 
             except Exception as e:
                     self.error = 'Unable to connect:{}'.format(e)
-
-            print('account_id' , self.current_account_id)
 
             if not self.current_account_id:
                 await ws.close()
