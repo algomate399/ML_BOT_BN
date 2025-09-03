@@ -1,130 +1,104 @@
+import websockets
+import json
 from Credit import *
-from Params import Weights
-from ctrader_open_api import Client , Protobuf , TcpProtocol , Auth , EndPoints
-from ctrader_open_api.messages.OpenApiCommonMessages_pb2 import *
-from ctrader_open_api.messages.OpenApiMessages_pb2 import *
-from ctrader_open_api.messages.OpenApiModelMessages_pb2 import *
-from twisted.internet import reactor
 import math
-
+from Params import Weights
 
 class ForexApi:
     def __init__(self):
-        self.client = None
+        self.url = "wss://demo.ctraderapi.com:5036"
         self.current_account_id = None
-        self.action=None
-        self.execution_flag=False
-
-        self.symbol_id = {}
-        self.symbol_list = []
-        self.tick_updates = {}
-        self.Signals = {}
-        self.sl_pips = {}
-
-        # account setting
+        self.error = None
         self.account_balance = None
+        self.symbol_id = {}
+        self.symbol_list = None
+        self.action = None
+        self.Signals = {}
+        self.sl_in_pips = {}
+
+    #   risk setting
         self.MaxDrawdown = 8/100
         self.DailyRiskDrawdown = 5/100
 
-    def Refresh_var(self):
-        self.client = None
-        self.current_account_id = None
-        self.symbol_id = {}
-        self.symbol_list = []
-        self.tick_updates = {}
-        self.Signals = {}
-        self.sl_pips = {}
-        self.account_balance = None
-        self.action = None
-        self.execution_flag=False
+    def RefreshVar(self):
+        self.current_account_id=None
+        self.error=None
+        self.account_balance=None
+        self.symbol_id={}
+        self.symbol_list=None
+        self.action=None
+        self.Signals={}
+        self.sl_in_pips={}
 
-    def app_auth(self):
-        req = ProtoOAApplicationAuthReq()
-        req.clientId=client_id
-        req.clientSecret= client_secret
-        deferred=self.client.send(req)
-        deferred.addErrback(self._on_error)
+    def get_payload(self , Type):
+        payloadType = payload = None
 
-    def account_auth(self):
-        req=ProtoOAAccountAuthReq()
-        req.ctidTraderAccountId= ctid_trader_account_id
-        req.accessToken=access_token
-        deferred=self.client.send(req)
-        deferred.addCallback(self.get_account_info)
-        deferred.addCallback(self.on_symbol_list_update)
-        if self.action =='close_all_positions':
-            deferred.addCallback(self.get_positions)
+        if Type =='AppAuth':
+            payloadType = 2100
+            payload = {"clientId": client_id, "clientSecret": client_secret}
 
-        deferred.addErrback(self._on_error)
+        elif Type =='AccountAuth':
+            payloadType=2102
+            payload={"ctidTraderAccountId": ctid_trader_account_id ,"accessToken": access_token}
 
-    def get_account_info(self , result):
-        req=ProtoOATraderReq()
-        req.ctidTraderAccountId=self.current_account_id
-        deferred = self.client.send(req)
-        return deferred
+        elif Type == 'AccountBal':
+            payloadType=2121
+            payload={"ctidTraderAccountId" : ctid_trader_account_id}
 
-    def get_positions(self , result):
-        if not self.current_account_id:
+        elif Type =='Symbol_list':
+            payloadType=2114
+            payload={"ctidTraderAccountId" : ctid_trader_account_id , "includeArchivedSymbols":False}
+
+        elif Type=='GetPositions':
+            payloadType=2124
+            payload={"ctidTraderAccountId" : ctid_trader_account_id}
+
+        return json.dumps({"payloadType":payloadType , "payload":payload})
+
+    def __patch_symbol_id(self , msg) :
+        for s in self.symbol_list :
+            symbols=msg['payload']
+            symbolsFilterResult=list(filter(lambda symbol : symbol['symbolName'] == s , symbols['symbol']))[0]
+            self.symbol_id[s]=int(symbolsFilterResult['symbolId'])
+
+    async def close_all_positions(self  , msg , ws):
+
+        if 'position' not in msg.get('payload'):
             return
-        req=ProtoOAReconcileReq()
-        req.ctidTraderAccountId=self.current_account_id
-        deferred=self.client.send(req)
-        deferred.addErrback(self._on_error)
-        return deferred
 
-    def close_all_positions(self):
-        for position in self.positions:
-            req = ProtoOAClosePositionReq()
-            req.ctidTraderAccountId=self.current_account_id
-            req.positionId = position.positionId
-            req.volume = position.tradeData.volume
-            deferred = self.client.send(req)
-            deferred.addErrback(self._on_error)
+        positions = msg.get('payload')['position']
 
-    def on_symbol_list_update(self , result):
-        if not self.current_account_id:
-            return
-        req=ProtoOASymbolsListReq()
-        req.ctidTraderAccountId=self.current_account_id
-        req.includeArchivedSymbols=False
-        deferred=self.client.send(req)
-        deferred.addCallback(self.__patch_symbol_id)
-        if self.action !='close_all_positions':
-            deferred.addCallback(self._subscribe_quotes)
-        deferred.addErrback(self._on_error)
-        return deferred
+        open_pos = [p for p in positions if int(p['tradeData']['symbolId']) in self.symbol_id.values()]
 
-    def __patch_symbol_id(self , result):
-        for s in self.symbol_list:
-            symbols=Protobuf.extract(result)
-            symbolsFilterResult=list(filter(lambda symbol : symbol.symbolName == s , symbols.symbol))[0]
-            self.symbol_id[s]=int(symbolsFilterResult.symbolId)
+        for pos in open_pos:
+            payload={
+                "payloadType" : 2111 ,
+                "payload" : {
+                    "ctidTraderAccountId" : self.current_account_id ,
+                    "positionId" : pos['positionId'] ,
+                    "volume" : pos['tradeData']['volume']
+                }
+            }
+            await ws.send(json.dumps(payload))
 
-    def _subscribe_quotes(self , result):
-        req = ProtoOASubscribeSpotsReq()
-        req.ctidTraderAccountId = self.current_account_id
-        for i in self.symbol_id.values():
-            req.symbolId.append(i)
-        deferred = self.client.send(req)
-        return deferred
+    async def send_market_order(self ,ws  , symbol , trade_side , volume , sl):
 
-    def _unsubscribe_quotes(self):
-        req = ProtoOAUnsubscribeSpotsReq()
-        req.ctidTraderAccountId = self.current_account_id
-        for i in self.symbol_id.values():
-            req.symbolId.append(i)
-        self.client.send(req)
+        if trade_side <0 :
+            trade_side =2
 
-    def send_market_order(self , symbol_id , trade_side , volume , sl = None):
-        req = ProtoOANewOrderReq()
-        req.ctidTraderAccountId=self.current_account_id
-        req.symbolId=symbol_id
-        req.orderType=ProtoOAOrderType.MARKET
-        req.tradeSide=ProtoOATradeSide.BUY if trade_side.lower() == "buy" else ProtoOATradeSide.SELL
-        req.volume=volume
-        if sl : req.relativeStopLoss = sl
-        deferred=self.client.send(req)
-        deferred.addErrback(self._on_error)
+        payload={
+            "payloadType" : 2106 ,
+            "payload" : {
+                "ctidTraderAccountId" : self.current_account_id ,
+                "symbolId" : self.symbol_id[symbol] ,
+                "orderType" : 1 ,
+                "tradeSide": trade_side,
+                "volume" : volume,
+                "relativeStopLoss" : sl
+            }
+        }
+        print(payload)
+        await ws.send(json.dumps(payload))
 
     def compute_lot_size(self) :
         # setting variables
@@ -147,82 +121,78 @@ class ForexApi:
 
             # lot size formula
             pip_value=contract_size(symbol) * pip_size(symbol)
-            lot_size=risk_money / (self.sl_pips[symbol] * pip_value)
+            lot_size=risk_money / (self.sl_in_pips[symbol] * pip_value)
             lot_sizes[symbol]=max(round(lot_size , 2) , min_lot_size)
 
         return lot_sizes
 
-    def get_sl_tp(self , symbol , side , lot_size):
+    def get_sl_tp(self , symbol  , lot_size):
         contract_size = 100 if ('XAUUSD' == symbol) else (5000 if "XAGUSD" == symbol else 100000)
         pip_size=0.01 if ('XAUUSD' == symbol) else (0.001 if "XAGUSD" == symbol else 0.0001)
         pip_pos=abs(int(round(math.log10(1 / pip_size))))
         units_per_pip=10 ** (5-pip_pos)
-        relative_sl=int(round(self.sl_pips[symbol] * units_per_pip))
+        relative_sl=int(round(self.sl_in_pips[symbol] * units_per_pip))
         volume = int(lot_size * contract_size * 100)
         return relative_sl , volume
 
-    def execute_signals(self):
+    async def execute_signals(self , ws):
+        lot_size = self.compute_lot_size()
         for s , signal in self.Signals.items():
             if signal:
-               lot_size = self.compute_lot_size()
-               print('lot_size' , lot_size)
-               sl  , volume = self.get_sl_tp(s , signal ,lot_size[s])
-               trade_side = 'buy' if signal > 0 else 'sell'
-               self.send_market_order(self.symbol_id[s]  ,trade_side , volume=volume , sl=sl)
+                sl , volume = self.get_sl_tp(s , lot_size[s])
+                await self.send_market_order(ws , s , signal , volume , sl)
 
-    def _on_connect(self ,client):
-        self.app_auth()
+    async def start(self):
 
-    def _on_disconnect(self, client , msg):
-        pass
+        async with websockets.connect(self.url) as ws :
+            try:
+                payload = self.get_payload('AppAuth')
+                await ws.send(payload)
 
-    def _on_error(self, msg):
-        print(msg)
+                __msg__ = await ws.recv()
+                msg = json.loads(__msg__)
 
-    def _on_msg_(self, client , msg):
+                if msg.get('payloadType') ==2101:
+                    payload = self.get_payload('AccountAuth')
+                    await ws.send(payload)
 
-        if msg.payloadType == ProtoOAApplicationAuthRes().payloadType:
-            self.account_auth()
-        elif msg.payloadType == ProtoOAAccountAuthRes().payloadType:
-            self.current_account_id = int(Protobuf.extract(msg).ctidTraderAccountId)
+                    __msg__=await ws.recv()
+                    msg=json.loads(__msg__)
+                    self.current_account_id = msg["payload"]["ctidTraderAccountId"]
+
+            except Exception as e:
+                    self.error = 'Unable to connect:{}'.format(e)
+
             print('account_id' , self.current_account_id)
-        elif msg.payloadType == ProtoOATraderRes().payloadType:
-             account_info = Protobuf.extract(msg).trader
-             self.account_balance = account_info.balance / (10**account_info.moneyDigits)
-             print('account_balance' , self.account_balance)
-        elif msg.payloadType == ProtoOAReconcileRes().payloadType:
-             positions = Protobuf.extract(msg).position
-             self.positions = [p for p in positions if int(p.tradeData.symbolId) in self.symbol_id.values()]
 
-             if self.positions :
-                self.close_all_positions()
-
-             reactor.callLater(10 , self.stop)
-
-        elif msg.payloadType ==ProtoOASpotEvent().payloadType:
-
-            if self.execution_flag:
+            if not self.current_account_id:
+                await ws.close()
                 return
 
-            ticks = Protobuf.extract(msg)
-            self.tick_updates[int(ticks.symbolId)] = ticks
+            payload = self.get_payload('AccountBal')
+            await ws.send(payload)
 
-            if all([i in self.tick_updates for i in self.symbol_id.values()]):
-               self.execution_flag=True
-               self._unsubscribe_quotes()
-               self.execute_signals()
-               reactor.callLater(10 , self.stop)
+            __msg__=await ws.recv()
+            msg=json.loads(__msg__)
+            account_info = msg['payload']['trader']
+            self.account_balance = account_info.get('balance')/(10**account_info.get('moneyDigits'))
 
-    def start(self):
-        self.client = Client(EndPoints.PROTOBUF_DEMO_HOST , EndPoints.PROTOBUF_PORT , TcpProtocol)
-        self.client.setConnectedCallback(self._on_connect)
-        self.client.setDisconnectedCallback(self._on_disconnect)
-        self.client.setMessageReceivedCallback(self._on_msg_)
-        self.client.startService()
+            payload = self.get_payload('Symbol_list')
+            await ws.send(payload)
 
-    def stop(self) :
-        if self.client :
-            self.client.stopService()
-            self.Refresh_var()
+            __msg__=await ws.recv()
+            msg=json.loads(__msg__)
+            self.__patch_symbol_id(msg)
 
+            if self.action =='close_all_positions':
+                payload = self.get_payload('GetPositions')
+                await ws.send(payload)
 
+                __msg__=await ws.recv()
+                msg=json.loads(__msg__)
+                await self.close_all_positions(msg , ws)
+
+            else:
+                await self.execute_signals(ws)
+
+            await ws.close()

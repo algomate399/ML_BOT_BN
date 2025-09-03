@@ -2,7 +2,6 @@ import time
 from ClassLib import *
 from MetaApp import MetaApi
 from Forex_api import ForexApi
-from twisted.internet import reactor
 import threading
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -21,20 +20,22 @@ metals = []
 api = MetaApi()
 fx = ForexApi()
 
-def primary_task_1():
+async def primary_task_1():
     if connected and currency:
+        fx.RefreshVar()
         fx.symbol_list = currency
         fx.action='close_all_positions'
-        fx.start()
+        await fx.start()
 
 
-def primary_task_2():
+async def primary_task_2():
     if connected and metals:
+        fx.RefreshVar()
         fx.symbol_list = metals
         fx.action = 'close_all_positions'
-        fx.start()
+        await fx.start()
 
-def secondary_task():
+async def secondary_task():
     if connected:
         api.Refresh_Var()
         api.UpdateHistory()
@@ -43,11 +44,12 @@ def secondary_task():
         print(api.Sl_in_PiP)
         sig_sum = np.sum([abs(s) for s in api.Signals.values()])
         if sig_sum:
+            fx.RefreshVar()
             fx.symbol_list=metals+currency
             fx.action='execute_signals'
             fx.Signals = api.Signals
-            fx.sl_pips = api.Sl_in_PiP
-            fx.start()
+            fx.sl_in_pips = api.Sl_in_PiP
+            await fx.start()
 
         if api.error :
             api.send_email_notification(api.error)
@@ -59,10 +61,6 @@ app = Flask(__name__)
 connected = False
 passkey = '141990'
 scheduler = None
-
-
-def start_reactor():
-    reactor.run(installSignalHandlers=False)
 
 
 @app.route('/')
@@ -89,18 +87,17 @@ def On_connect():
             scheduler = AsyncIOScheduler(event_loop=loop)
 
             # Add tasks to the scheduler
-            # scheduler.add_job(primary_task_1 , CronTrigger(hour=2 , minute=25 , timezone=timezone('Asia/Kolkata') ,
-            #                                                day_of_week='tue-sat'))
+            scheduler.add_job(primary_task_1 , CronTrigger(hour=20 , minute=57 , timezone=timezone('Asia/Kolkata') ,
+                                                           day_of_week='tue-sat'))
             # scheduler.add_job(primary_task_2 , CronTrigger(hour=3 , minute=25 , timezone=timezone('Asia/Kolkata') ,
             #                                                day_of_week='tue-sat'))
-            scheduler.add_job(secondary_task , CronTrigger(hour=14 , minute=40 , timezone=timezone('Asia/Kolkata') ,
+            scheduler.add_job(secondary_task , CronTrigger(hour=21 , minute=2 , timezone=timezone('Asia/Kolkata') ,
                                                            day_of_week='mon-fri'))
 
             # Start the scheduler
             scheduler.start()
 
             # Start the asyncio loop in a background thread
-            threading.Thread(target=start_reactor , daemon=True).start()
             threading.Thread(target=loop.run_forever, daemon=True).start()
 
             status = 'engine is running'
@@ -123,8 +120,6 @@ def get_connection_status():
 
 if __name__ == '__main__':
     app.run(debug=True)
-
-
 
 
 

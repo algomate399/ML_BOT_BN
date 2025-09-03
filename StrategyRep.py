@@ -187,7 +187,7 @@ class PredictorEngine:
         probability=[self.base_ml[i].predict_proba(self.generate_features(param)) for i , param in enumerate(self.params , start=1)]
         proba=np.column_stack(probability)
         signal = self.ensemble_model.predict(proba)[-1]
-        return signal , self.get_sl(signal , **self.sl_params)
+        return int(signal) , self.get_sl(signal , **self.sl_params)
 
     def get_sl(self , signal ,  lookback , quantiles):
         x =self.data
