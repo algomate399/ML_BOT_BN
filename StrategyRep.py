@@ -25,6 +25,8 @@ class PredictorEngine:
         self.data = None
         self.cmp_data = None
         self.params = None
+        self.sl_params = None
+        self.Vol_Params = None
         self.ensemble_model = None
         self.base_ml = [None]
         self.series_idx = None
@@ -33,7 +35,7 @@ class PredictorEngine:
         self.load_model()
 
     def load_model(self):
-        self.params  , ensemble = get_ensemble_n(self.strategy_name)
+        self.params  ,self.sl_params , self.Vol_Params  , ensemble = get_ensemble_n(self.strategy_name)
         for n in range(1,ensemble+1):
             self.base_ml.append(self.get_model(n, 'base_model'))
 
@@ -103,7 +105,6 @@ class PredictorEngine:
         daily_change=(self.data['close']-self.data['close'].shift(1)) / self.data['close'].shift(1)
         HurstRegime=ComputeRegime_HURST(self.data['close'] , window=100)
         _VOL_RAW_REG_ , self.TRADING_HAULT_PERIOD=self.VolatilityRegimer(daily_change)
-
 
         REGIME_FEAT={}
         for w in [10 , 30 , 60 , 100] :
@@ -185,4 +186,26 @@ class PredictorEngine:
         self.load_history()
         probability=[self.base_ml[i].predict_proba(self.generate_features(param)) for i , param in enumerate(self.params , start=1)]
         proba=np.column_stack(probability)
-        return self.ensemble_model.predict(proba)[-1]
+        signal = self.ensemble_model.predict(proba)[-1]
+        return signal , self.get_sl(signal , **self.sl_params)
+
+    def get_sl(self , signal ,  lookback , quantiles):
+        x =self.data
+        var = 0
+
+        pip_size=0.01 if ('XAUUSD' == self.symbol) else (0.001 if "XAGUSD" == self.symbol else 0.0001)
+
+        if signal>0:
+            up_days=x['open'] < x['close']
+            SL_RANG_POS=(x['open']-x['low'])[up_days]
+            SL_RANG_POS=SL_RANG_POS.reindex(x.index , method='ffill').rename('SL_RANG_POS')
+            MAX_STOP_POS=SL_RANG_POS.rolling(window=lookback , min_periods=2).quantile(quantiles).fillna(0.0)
+            var = MAX_STOP_POS.iloc[-1]
+        elif signal<0:
+            dn_days=x['open'] > x['close']
+            SL_RANG_NEG=(x['high']-x['open'])[dn_days]
+            SL_RANG_NEG=SL_RANG_NEG.reindex(x.index , method='ffill').rename('SL_RANG_NEG')
+            MAX_STOP_NEG=SL_RANG_NEG.rolling(window=lookback , min_periods=2).quantile(quantiles).fillna(0.0)
+            var = MAX_STOP_NEG.iloc[-1]
+
+        return var/pip_size

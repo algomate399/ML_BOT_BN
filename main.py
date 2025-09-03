@@ -15,21 +15,21 @@ import __main__
 setattr(__main__ , 'NoiseEnhancer' ,NoiseEnhancer)
 setattr(__main__ , 'BaggingBootstrapper' ,BaggingBootstrapper)
 
-currency = ['EURUSD' ,'GBPUSD' , 'AUDUSD' , 'NZDUSD']
-metals = ['XAUUSD']
+currency = ['EURUSD' ,'GBPUSD' , 'NZDUSD']
+metals = []
 
 api = MetaApi()
 fx = ForexApi()
 
 def primary_task_1():
-    if connected:
+    if connected and currency:
         fx.symbol_list = currency
         fx.action='close_all_positions'
         fx.start()
 
 
 def primary_task_2():
-    if connected:
+    if connected and metals:
         fx.symbol_list = metals
         fx.action = 'close_all_positions'
         fx.start()
@@ -39,11 +39,14 @@ def secondary_task():
         api.Refresh_Var()
         api.UpdateHistory()
         api.GenerateSignal()
+        print(api.Signals)
+        print(api.Sl_in_PiP)
         sig_sum = np.sum([abs(s) for s in api.Signals.values()])
         if sig_sum:
             fx.symbol_list=metals+currency
             fx.action='execute_signals'
             fx.Signals = api.Signals
+            fx.sl_pips = api.Sl_in_PiP
             fx.start()
 
         if api.error :
@@ -86,9 +89,12 @@ def On_connect():
             scheduler = AsyncIOScheduler(event_loop=loop)
 
             # Add tasks to the scheduler
-            scheduler.add_job(primary_task_1, CronTrigger(hour=2, minute=25, timezone=timezone('Asia/Kolkata'), day_of_week='tue-sat'))
-            scheduler.add_job(primary_task_2, CronTrigger(hour=3, minute=25, timezone=timezone('Asia/Kolkata'), day_of_week='tue-sat'))
-            scheduler.add_job(secondary_task, CronTrigger(hour=3, minute=33, timezone=timezone('Asia/Kolkata'), day_of_week='mon-fri'))
+            # scheduler.add_job(primary_task_1 , CronTrigger(hour=2 , minute=25 , timezone=timezone('Asia/Kolkata') ,
+            #                                                day_of_week='tue-sat'))
+            # scheduler.add_job(primary_task_2 , CronTrigger(hour=3 , minute=25 , timezone=timezone('Asia/Kolkata') ,
+            #                                                day_of_week='tue-sat'))
+            scheduler.add_job(secondary_task , CronTrigger(hour=13 , minute=26 , timezone=timezone('Asia/Kolkata') ,
+                                                           day_of_week='mon-fri'))
 
             # Start the scheduler
             scheduler.start()

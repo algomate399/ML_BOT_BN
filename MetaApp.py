@@ -5,7 +5,6 @@ import time
 from datetime import datetime
 import smtplib
 from email.mime.text import MIMEText
-import requests
 from StrategyRep import PredictorEngine
 from Params import Strategy_On_params , GetHistory
 
@@ -18,6 +17,7 @@ class MetaApi:
         self.error = None
         self.models = {}
         self.Signals ={}
+        self.Sl_in_PiP = {}
         self.symbol_list=np.unique([ticker for ticker in Strategy_On_params])
         self.load_Strategy()
 
@@ -70,16 +70,21 @@ class MetaApi:
     def GenerateSignal(self):
         try:
             self.Signals = {}
+            self.Sl_in_PiP = {}
             Updated_symbol = list(set(self.symbol_list) & set(self.Symbol_historyUpdates))
 
             for ticker in Updated_symbol:
-                sig = 0
+                SIG = 0
+                SL = {}
                 for key , model in self.models.items():
                     if key.split('_')[-1] ==ticker:
-                        sig+=model.GetPrediction()
-                        time.sleep(5)
+                        sig  ,  sl = model.GetPrediction()
+                        SIG+=sig
+                        SL[sig] = sl
+                        time.sleep(3)
 
-                self.Signals[ticker] = sig
+                self.Signals[ticker] = SIG
+                self.Sl_in_PiP[ticker] = SL[1 if SIG > 0 else -1] if SIG else 0
 
         except Exception as e:
             self.error="Error:@GEN_SIGNALS:{}".format(e)

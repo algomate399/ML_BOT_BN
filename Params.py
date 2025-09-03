@@ -8,14 +8,12 @@ from Credit import API_KEY
 from datetime import datetime ,timedelta
 import requests
 
-# sl and tp points
-sl_pips = {'EURUSD':75,'XAUUSD':1700 , 'GBPUSD':75 , 'AUDUSD':75 , 'NZDUSD':75}
-tp_pips = {'EURUSD':100,'XAUUSD':2300 , 'GBPUSD':120 ,'AUDUSD':120 , 'NZDUSD':100}
-
 
 # defining strategy parameters
 params_1 = [{'strategy': 'MomTrading', 'Components': None, 'interval': 'D'}]
-Strategy_On_params = {'EURUSD':params_1 , 'AUDUSD':params_1 , 'XAUUSD':params_1 , 'NZDUSD':params_1 , 'GBPUSD':params_1}
+
+Strategy_On_params = {'EURUSD':params_1 , 'GBPUSD':params_1  , 'NZDUSD':params_1}
+Weights = {'EURUSD': 0.449, 'NZDUSD': 0.267, 'GBPUSD': 0.283}
 
 
 def load_csv(symbol ,drop_date=None):
@@ -30,8 +28,9 @@ def get_ensemble_n(strategy_name):
     path = os.path.join('Models',strategy_name, file_name)
     with open(path, 'r') as f:
         params = json.load(f)
+        params , sl_params , Vol_Params = params[:-2] , params[-2]['sl_params'] , params[-1]['Vol_Params']
 
-    return params , len(params)
+    return params , sl_params , Vol_Params , len(params)
 
 # indicator function
 def TrendIntensityIndex(dt , window):
@@ -102,3 +101,5 @@ def GetHistory(symbol , limit=5000, days = 365):
     df = df.rename(columns={"t":"time", "o":"open", "h":"high", "l":"low", "c":"close", "v":"volume"})
     df = df.set_index('time')
     return df[["open", "high", "low", "close"]]
+
+
