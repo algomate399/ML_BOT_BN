@@ -165,7 +165,7 @@ class ForexApi:
         for s , signal in self.Signals.items():
             if signal:
                lot_size = self.compute_lot_size()
-               print(lot_size)
+               print('lot_size' , lot_size)
                sl  , volume = self.get_sl_tp(s , signal ,lot_size[s])
                trade_side = 'buy' if signal > 0 else 'sell'
                self.send_market_order(self.symbol_id[s]  ,trade_side , volume=volume , sl=sl)
@@ -185,9 +185,11 @@ class ForexApi:
             self.account_auth()
         elif msg.payloadType == ProtoOAAccountAuthRes().payloadType:
             self.current_account_id = int(Protobuf.extract(msg).ctidTraderAccountId)
+            print('account_id' , self.current_account_id)
         elif msg.payloadType == ProtoOATraderRes().payloadType:
              account_info = Protobuf.extract(msg).trader
              self.account_balance = account_info.balance / (10**account_info.moneyDigits)
+             print('account_balance' , self.account_balance)
         elif msg.payloadType == ProtoOAReconcileRes().payloadType:
              positions = Protobuf.extract(msg).position
              self.positions = [p for p in positions if int(p.tradeData.symbolId) in self.symbol_id.values()]
@@ -222,4 +224,5 @@ class ForexApi:
         if self.client :
             self.client.stopService()
             self.Refresh_var()
+
 
