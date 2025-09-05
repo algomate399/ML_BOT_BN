@@ -172,6 +172,11 @@ class ForexApi:
 
             __msg__=await ws.recv()
             msg=json.loads(__msg__)
+
+            if 'trader' not in msg.get('payload'):
+                await ws.close()
+                return
+
             account_info = msg['payload']['trader']
             self.account_balance = account_info.get('balance')/(10**account_info.get('moneyDigits'))
 

@@ -29,7 +29,7 @@ class MetaApi:
 
         # sending email response :
         msg='Engine refreshed @ :{}'.format(datetime.now(self.time_zone))
-        self.send_email_notification(msg)
+        # self.send_email_notification(msg)
 
     def Refresh_Var(self):
         self.error=None
@@ -61,7 +61,7 @@ class MetaApi:
             if bars :
                 self.Symbol_historyUpdates=[symbol for symbol in bars]
                 for symbol , history in bars.items() :
-                    file_path=os.path.join('database_fx' , symbol , symbol)
+                    file_path=os.path.join('database_fx' , symbol , '{}.csv'.format(symbol))
                     history.to_csv(file_path)
         except Exception as e :
             self.error='Error:@UpdateHistory:{}'.format(e)
@@ -83,8 +83,9 @@ class MetaApi:
                         SL[sig] = sl
                         time.sleep(3)
 
-                self.Signals[ticker] = SIG
-                self.Sl_in_PiP[ticker] = SL[1 if SIG > 0 else -1] if SIG else 0
+                if SIG:
+                    self.Signals[ticker] = SIG
+                    self.Sl_in_PiP[ticker] = SL[1 if SIG > 0 else -1] if SIG else 0
 
         except Exception as e:
             self.error="Error:@GEN_SIGNALS:{}".format(e)

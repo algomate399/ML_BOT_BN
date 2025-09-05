@@ -17,7 +17,7 @@ Weights = {'EURUSD': 0.449, 'NZDUSD': 0.267, 'GBPUSD': 0.283}
 
 
 def load_csv(symbol ,drop_date=None):
-    file_path = os.path.join('database_fx', symbol, f'{symbol}')
+    file_path = os.path.join('database_fx', symbol, '{}.csv'.format(symbol))
     if os.path.exists(file_path):
        d = pd.read_csv(file_path , index_col=0 , parse_dates=True)
        return d.loc[d.index.normalize()!=pd.Timestamp(drop_date)]

@@ -85,10 +85,9 @@ def On_connect():
             scheduler = AsyncIOScheduler(event_loop=loop)
 
             # Add tasks to the scheduler
-            scheduler.add_job(primary_task_1, CronTrigger(hour=2, minute=25, timezone=timezone('Asia/Kolkata'), day_of_week='tue-sat'))
+            scheduler.add_job(primary_task_1, CronTrigger(hour=2, minute=15, timezone=timezone('Asia/Kolkata'), day_of_week='tue-sat'))
             # scheduler.add_job(primary_task_2, CronTrigger(hour=3, minute=25, timezone=timezone('Asia/Kolkata'), day_of_week='tue-sat'))
-            scheduler.add_job(secondary_task, CronTrigger(hour=3, minute=33, timezone=timezone('Asia/Kolkata'), day_of_week='mon-fri'))
-
+            scheduler.add_job(secondary_task, CronTrigger(hour=3, minute=35, timezone=timezone('Asia/Kolkata'), day_of_week='mon-fri'))
             # Start the scheduler
             scheduler.start()
 
