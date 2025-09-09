@@ -99,6 +99,7 @@ class PredictorEngine:
             Volatility = Volatility.ewm(span=DoubleSmoothingWindow , min_periods=1).mean()
 
         FEAT=pd.concat([DailyChange , Volatility] , axis=1).dropna()
+        print('Vol:{}'.format(self.symbol) , FEAT.tail(5))
         regimes=pd.Series(self.Vol_Model.predict(FEAT) , index=FEAT.index , name='_VOL_RAW_REG_')
         mean_vol=FEAT.groupby(regimes)['Volatility'].mean().sort_values()
         regime_order={regime : i for i , regime in enumerate(mean_vol.index)}
@@ -212,5 +213,6 @@ class PredictorEngine:
             SL_RANG_NEG=SL_RANG_NEG.reindex(x.index , method='ffill').rename('SL_RANG_NEG')
             MAX_STOP_NEG=SL_RANG_NEG.rolling(window=lookback , min_periods=2).quantile(quantiles).fillna(0.0)
             var = MAX_STOP_NEG.iloc[-1]
+
 
         return var/pip_size
