@@ -5,10 +5,9 @@ gunicorn
 websocket-client
 urllib3==1.26.17
 requests
-apscheduler
 scikit-learn==1.5.1
 arch==7.1.0
-hurst
+hurst==0.0.5
 secure-smtplib
 flask
 pytz
