@@ -26,6 +26,7 @@ async def secondary_task():
         api.Refresh_Var()
         api.UpdateHistory()
         api.GenerateSignal()
+        print(api.Signals)
         sig_sum = np.sum([abs(s) for s in api.Signals.values()])
         if sig_sum:
             fx.RefreshVar()
@@ -72,6 +73,7 @@ def submit_signal():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
 
 
 
