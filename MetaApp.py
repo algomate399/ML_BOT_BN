@@ -108,5 +108,4 @@ class MetaApi:
 
         except Exception as e:
             self.error = f'Error:{e}'
-
             print(self.error)

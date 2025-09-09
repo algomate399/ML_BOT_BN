@@ -91,9 +91,13 @@ class PredictorEngine:
 
         return standardized_features.dropna(axis=0)
 
-    def VolatilityRegimer(self , x) :
+    def VolatilityRegimer(self , x  , lookback ,DoubleSmoothingWindow) :
         DailyChange=x.rename('DailyChange')
-        Volatility=DailyChange.ewm(span=10 , min_periods=1).std().rename('Volatility')
+        Volatility=DailyChange.ewm(span=lookback , min_periods=1).std().rename('Volatility')
+
+        if DoubleSmoothingWindow:
+            Volatility = Volatility.ewm(span=DoubleSmoothingWindow , min_periods=1).mean()
+
         FEAT=pd.concat([DailyChange , Volatility] , axis=1).dropna()
         regimes=pd.Series(self.Vol_Model.predict(FEAT) , index=FEAT.index , name='_VOL_RAW_REG_')
         mean_vol=FEAT.groupby(regimes)['Volatility'].mean().sort_values()
@@ -104,7 +108,7 @@ class PredictorEngine:
     def GetMarketRegime(self) :
         daily_change=(self.data['close']-self.data['close'].shift(1)) / self.data['close'].shift(1)
         HurstRegime=ComputeRegime_HURST(self.data['close'] , window=100)
-        _VOL_RAW_REG_ , self.TRADING_HAULT_PERIOD=self.VolatilityRegimer(daily_change)
+        _VOL_RAW_REG_ , self.TRADING_HAULT_PERIOD=self.VolatilityRegimer(daily_change , **self.Vol_Params)
 
         REGIME_FEAT={}
         for w in [10 , 30 , 60 , 100] :
@@ -179,8 +183,8 @@ class PredictorEngine:
         normalize_features = None
         if self.strategy_name=='MomTrading_{}'.format(self.symbol):
             normalize_features = self.MomTrading(**params)
-        
-        print('features' , normalize_features.tail(5))
+
+        print('features:{}'.format(self.symbol) ,normalize_features.tail(5))
         return normalize_features.tail(5)
 
     def GetPrediction(self) :
@@ -209,6 +213,4 @@ class PredictorEngine:
             MAX_STOP_NEG=SL_RANG_NEG.rolling(window=lookback , min_periods=2).quantile(quantiles).fillna(0.0)
             var = MAX_STOP_NEG.iloc[-1]
 
-
         return var/pip_size
-
