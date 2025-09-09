@@ -14,3 +14,5 @@ pytz
 hmmlearn==0.3.2
 websockets==15.0.1
 scipy ==1.13.1
+./dist/pandas_ta-0.3.14b0-py3-none-any.whl
+
