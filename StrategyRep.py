@@ -180,7 +180,7 @@ class PredictorEngine:
         if self.strategy_name=='MomTrading_{}'.format(self.symbol):
             normalize_features = self.MomTrading(**params)
         
-        print(normalize_features.tail(5))
+        print('features' , normalize_features.tail(5))
         return normalize_features.tail(5)
 
     def GetPrediction(self) :
@@ -211,3 +211,4 @@ class PredictorEngine:
 
 
         return var/pip_size
+
