@@ -99,7 +99,6 @@ class PredictorEngine:
             Volatility = Volatility.ewm(span=DoubleSmoothingWindow , min_periods=1).mean()
 
         FEAT=pd.concat([DailyChange , Volatility] , axis=1).dropna()
-        print('Vol:{}'.format(self.symbol) , FEAT.tail(5))
         regimes=pd.Series(self.Vol_Model.predict(FEAT) , index=FEAT.index , name='_VOL_RAW_REG_')
         mean_vol=FEAT.groupby(regimes)['Volatility'].mean().sort_values()
         regime_order={regime : i for i , regime in enumerate(mean_vol.index)}
@@ -215,4 +214,5 @@ class PredictorEngine:
 
 
         return var/pip_size
+
 
