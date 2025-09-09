@@ -7,6 +7,7 @@ from sklearn.linear_model import LinearRegression
 from Credit import API_KEY
 from datetime import datetime ,timedelta
 import requests
+from pytz import timezone
 
 
 # defining strategy parameters
@@ -77,9 +78,10 @@ def ComputeRegime_HURST(dt , window):
 
 
 def GetHistory(symbol , limit=5000, days = 365):
+    t_zone =timezone('Asia/Kolkata')
 
-    end_date = datetime.now().strftime("%Y-%m-%d")
-    start_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
+    end_date = datetime.now(t_zone).strftime("%Y-%m-%d")
+    start_date = (datetime.now(t_zone) - timedelta(days=days)).strftime("%Y-%m-%d")
     symbol = 'C:'+symbol
     url = f"https://api.polygon.io/v2/aggs/ticker/{symbol}/range/1/day/{start_date}/{end_date}"
     params = {
