@@ -179,7 +179,8 @@ class PredictorEngine:
         normalize_features = None
         if self.strategy_name=='MomTrading_{}'.format(self.symbol):
             normalize_features = self.MomTrading(**params)
-
+        
+        print(normalize_features.tail(5))
         return normalize_features.tail(5)
 
     def GetPrediction(self) :
@@ -207,5 +208,6 @@ class PredictorEngine:
             SL_RANG_NEG=SL_RANG_NEG.reindex(x.index , method='ffill').rename('SL_RANG_NEG')
             MAX_STOP_NEG=SL_RANG_NEG.rolling(window=lookback , min_periods=2).quantile(quantiles).fillna(0.0)
             var = MAX_STOP_NEG.iloc[-1]
+
 
         return var/pip_size
