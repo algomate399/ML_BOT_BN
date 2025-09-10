@@ -1,30 +1,42 @@
 from ClassLib import *
 from MetaApp import MetaApi
-from flask import Flask, render_template,request , jsonify
+from Forex_api import ForexApi
 import threading
+from flask import Flask, request, render_template , jsonify
+import asyncio
 import __main__
 
 # setting Attributes to Main
 setattr(__main__ , 'NoiseEnhancer' ,NoiseEnhancer)
 setattr(__main__ , 'BaggingBootstrapper' ,BaggingBootstrapper)
 
-Algo = MetaApi()
-Crypto = ['ETH-USD' , 'BTC-USD']
+currency = ['EURUSD' ,'GBPUSD' , 'NZDUSD']
 
-def primary_task():
-    Algo.Refresh_Var()
-    Algo.symbol_list = Crypto
-    Algo.UpdateHistory()
-    Algo.GenerateSignals()
 
-    if Algo.error:
-       Algo.send_email_notification(Algo.error)
-    else:
-        msg = 'Signal Generated:{}'.format(Algo.Signals)
-        Algo.send_email_notification(msg)
-#
-def secondary_task():
-    Algo.place_order()
+ForexApi.SIG_GEN = MetaApi()
+fx = ForexApi()
+
+
+async def primary_task():
+        fx.RefreshVar()
+        fx.symbol_list = currency
+        fx.action='close_all_positions'
+        await fx.start()
+
+
+async def secondary_task():
+        fx.RefreshVar()
+        fx.symbol_list = currency
+        fx.action = 'execute_signals'
+        await fx.start()
+
+        if fx.error:
+            fx.SIG_GEN.send_email_notification(fx.error)
+        else:
+            fx.SIG_GEN.send_email_notification(fx.Signals)
+
+def run_async(x):
+    asyncio.run(x)
 
 
 app = Flask(__name__)
@@ -35,10 +47,10 @@ def Homepage():
     return render_template('index.html', title=title)
 
 
-@app.route('/process_signals')
-def process_signals():
+@app.route('/close_all_positions')
+def process_positions():
 
-    t = threading.Thread(target=primary_task)
+    t = threading.Thread(target=run_async , args=(primary_task() , ))
     t.start()
 
     return jsonify({"status": "ok"})
@@ -46,7 +58,7 @@ def process_signals():
 @app.route('/submit_signals')
 def submit_signal():
 
-    t = threading.Thread(target=secondary_task)
+    t = threading.Thread(target=run_async , args=(secondary_task() , ))
     t.start()
 
     return jsonify({"status": "ok"})
@@ -54,3 +66,6 @@ def submit_signal():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+
+

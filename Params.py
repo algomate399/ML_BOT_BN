@@ -4,16 +4,17 @@ import pandas as pd
 import numpy as np
 from hurst import compute_Hc
 from sklearn.linear_model import LinearRegression
-import ccxt
+
 
 # defining strategy parameters
 params_1 = [{'strategy': 'MomTrading', 'Components': None, 'interval': 'D'}]
 
-Strategy_On_params = {'ETH-USD':params_1 , 'BTC-USD':params_1}
+Strategy_On_params = {'EURUSD':params_1 , 'GBPUSD':params_1  , 'NZDUSD':params_1}
+Weights = {'EURUSD': 0.449, 'NZDUSD': 0.267, 'GBPUSD': 0.283}
 
 
 def load_csv(symbol ,drop_date=None):
-    file_path = os.path.join('database_fx', symbol, f'{symbol}.csv')
+    file_path = os.path.join('database_fx', symbol, '{}.csv'.format(symbol))
     if os.path.exists(file_path):
        d = pd.read_csv(file_path , index_col=0 , parse_dates=True)
        return d.loc[d.index.normalize()!=pd.Timestamp(drop_date)]
@@ -34,7 +35,8 @@ def TrendIntensityIndex(dt , window):
     day_above_average = (dt>ma).rolling(window=window).sum()
     return 100* day_above_average/window
 
-def calculate_MOM_Burst( dt ,  lookback  ):
+
+def calculate_MOM_Burst( dt ,  lookback):
 #    calculating the indicator mom burst
     candle_range = dt['high']-dt['low']
     mean_range = candle_range.rolling(window  = lookback).mean()
@@ -69,23 +71,3 @@ def ComputeRegime_HURST(dt , window):
     rolling_hurst_exponents = dt.rolling(window=window).apply(lambda X: compute_Hc(X)[0] , raw =False)
     regime = pd.Series(rolling_hurst_exponents , rolling_hurst_exponents.index  , name = 'HurstRegime')
     return regime
-
-def GetHistory(symbol):
-     return get_delta_historical_data(symbol)
-
-
-def get_delta_historical_data(symbol , interval='1d' , days=365) :
-    symbol_ID={'BTC-USD' : 'BTC/USDT:USDT' , 'ETH-USD' : 'ETH/USDT:USDT'}
-
-    delta=ccxt.delta({
-        'enableRateLimit' : True ,
-    })
-
-    markets=delta.load_markets()
-    ohlcv=delta.fetch_ohlcv(symbol_ID[symbol] , timeframe=interval , limit=days)
-
-    df=pd.DataFrame(ohlcv , columns=['timestamp' , 'open' , 'high' , 'low' , 'close' , 'volume'])
-    df['timestamp']=pd.to_datetime(df['timestamp'] , unit='ms')
-    df.set_index('timestamp' , inplace=True)
-
-    return df

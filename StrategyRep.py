@@ -35,7 +35,7 @@ class PredictorEngine:
         self.load_model()
 
     def load_model(self):
-        self.params , self.sl_params , self.Vol_Params , ensemble=get_ensemble_n(self.strategy_name)
+        self.params  ,self.sl_params , self.Vol_Params  , ensemble = get_ensemble_n(self.strategy_name)
         for n in range(1,ensemble+1):
             self.base_ml.append(self.get_model(n, 'base_model'))
 
@@ -181,7 +181,7 @@ class PredictorEngine:
 
     def generate_features(self, params):
         normalize_features = None
-        if self.strategy_name=='MomTrading_{}'.format(self.symbol) or self.strategy_name=='MeanTrading_{}'.format(self.symbol):
+        if self.strategy_name=='MomTrading_{}'.format(self.symbol):
             normalize_features = self.MomTrading(**params)
 
         return normalize_features.tail(5)
@@ -197,6 +197,8 @@ class PredictorEngine:
         x =self.data
         var = 0
 
+        pip_size=0.01 if ('XAUUSD' == self.symbol) else (0.001 if "XAGUSD" == self.symbol else 0.0001)
+
         if signal>0:
             up_days=x['open'] < x['close']
             SL_RANG_POS=(x['open']-x['low'])[up_days]
@@ -210,4 +212,4 @@ class PredictorEngine:
             MAX_STOP_NEG=SL_RANG_NEG.rolling(window=lookback , min_periods=2).quantile(quantiles).fillna(0.0)
             var = MAX_STOP_NEG.iloc[-1]
 
-        return var
+        return var/pip_size
