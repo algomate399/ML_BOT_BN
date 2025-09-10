@@ -2,38 +2,43 @@ import numpy as np
 import os
 import pytz
 import time
+import datetime
+from Params import Strategy_On_params , GetHistory
+from StrategyRep import PredictorEngine
 from datetime import datetime
+import requests
 import smtplib
 from email.mime.text import MIMEText
-from StrategyRep import PredictorEngine
-from Params import Strategy_On_params , GetHistory
-
 
 class MetaApi:
-    Symbol_historyUpdates=[]
+    Symbol_historyUpdates = []
 
     def __init__(self):
         self.time_zone = pytz.timezone('Asia/kolkata')
+        self.unique_ticker = None
         self.error = None
+        self.retry_count = 5
         self.models = {}
-        self.Signals ={}
-        self.Sl_in_PiP = {}
-        self.symbol_list=np.unique([ticker for ticker in Strategy_On_params])
+        self.Signals = {}
+        self.sl_points ={}
+        self.symbol_list = np.unique([ticker for ticker in Strategy_On_params])
         self.load_Strategy()
+        self.Refresh_Var()
 
-        # email setups
-        self.bot_name='FxMate-GPT(AI DRIVEN MODEL)'
+        #   sending email response :
+        self.bot_name='NSE-GPT(AI DRIVEN MODEL)'
         self.sender_mail='algomate399@gmail.com'
         self.sender_pass='eddx tpyl sggx ryfr'
         self.recipient_mail='tapasguha258@gmail.com'
 
-        # sending email response :
         msg='Engine refreshed @ :{}'.format(datetime.now(self.time_zone))
-        self.send_email_notification(msg)
+        # self.send_email_notification(msg)
 
-    def Refresh_Var(self):
+    def Refresh_Var(self) :
+        self.Symbol_historyUpdates=[]
         self.error=None
         self.Signals={}
+        self.sl_points = {}
 
         # removing redundant file from the database_fx
         for symbol in self.symbol_list:
@@ -42,6 +47,7 @@ class MetaApi:
                 os.remove(file_path)
 
     def load_Strategy(self):
+
         try:
            for ticker in self.symbol_list:
                Strategy_ = Strategy_On_params[ticker]
@@ -53,43 +59,70 @@ class MetaApi:
             self.error='Error:@load_strategy:{}'.format(e)
             print(self.error)
 
-    def UpdateHistory(self) :
-        try :
-            bars = {}
-            for s in self.symbol_list:
-                bars[s] = GetHistory(s)
-            if bars :
-                self.Symbol_historyUpdates=[symbol for symbol in bars]
-                for symbol , history in bars.items() :
-                    file_path=os.path.join('database_fx' , symbol , '{}.csv'.format(symbol))
-                    history.to_csv(file_path)
-        except Exception as e :
-            self.error='Error:@UpdateHistory:{}'.format(e)
-            print(self.error)
+    def UpdateHistory(self):
 
-    def GenerateSignal(self):
+        for symbol in self.symbol_list :
+            u=0
+            while u < self.retry_count :
+                try :
+                    file_path=os.path.join('database_fx' , symbol , '{}.csv'.format(symbol))
+                    history=GetHistory(symbol)
+                    history = history[history.index.date!=datetime.now(self.time_zone).today().date()]
+                    history.to_csv(file_path)
+                    self.Symbol_historyUpdates.append(symbol)
+                    time.sleep(2)
+                    break
+                except Exception as e :
+                    u+=1
+                    time.sleep(5)
+                    if u == self.retry_count :
+                        self.error='Error:@UpdateHistory:{}:{}'.format(symbol , e)
+                        print(self.error)
+
+    def GenerateSignals(self):
         try:
             self.Signals = {}
-            self.Sl_in_PiP = {}
             Updated_symbol = list(set(self.symbol_list) & set(self.Symbol_historyUpdates))
 
             for ticker in Updated_symbol:
-                SIG = 0
-                SL = {}
+                SIG=0
+                SL={}
                 for key , model in self.models.items():
                     if key.split('_')[-1] ==ticker:
-                        sig  ,  sl = model.GetPrediction()
+                        sig , sl=model.GetPrediction()
                         SIG+=sig
-                        SL[sig] = sl
+                        SL[sig]=sl
                         time.sleep(3)
 
                 if SIG:
-                    self.Signals[ticker] = SIG
-                    self.Sl_in_PiP[ticker] = SL[1 if SIG > 0 else -1] if SIG else 0
+                    self.Signals[ticker]=SIG
+                    self.sl_points[ticker]=SL[1 if SIG > 0 else -1] if SIG else 0
 
         except Exception as e:
             self.error="Error:@GEN_SIGNALS:{}".format(e)
             print(self.error)
+
+    def place_order(self):
+
+        ID_ = {'BTC-USD':'BTC' , 'ETH-USD':'ETH'}
+
+        for symbol , signal in self.Signals.items():
+
+            token = 'deb38989-4a94-4716-a7de-3f499e843440'
+
+            if not signal :
+                continue
+
+            trade_data={
+                f"Y_PRED_{ID_[symbol]}" : 1 if signal > 0 else -1 ,
+                f"SL_{ID_[symbol]}" : self.sl_points[symbol]
+            }
+
+            for key , val in trade_data.items() :
+                url=f"https://api.tradetron.tech/api?auth-token={token}&key={key}&value={val}"
+                requests.get(url)
+
+            time.sleep(3)
 
     def send_email_notification(self ,subject):
 
@@ -109,3 +142,4 @@ class MetaApi:
         except Exception as e:
             self.error = f'Error:{e}'
             print(self.error)
+
