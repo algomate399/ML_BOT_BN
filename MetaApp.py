@@ -32,7 +32,7 @@ class MetaApi:
         self.recipient_mail='tapasguha258@gmail.com'
 
         msg='Engine refreshed @ :{}'.format(datetime.now(self.time_zone))
-        # self.send_email_notification(msg)
+        self.send_email_notification(msg)
 
     def Refresh_Var(self) :
         self.Symbol_historyUpdates=[]
@@ -142,4 +142,5 @@ class MetaApi:
         except Exception as e:
             self.error = f'Error:{e}'
             print(self.error)
+
 
