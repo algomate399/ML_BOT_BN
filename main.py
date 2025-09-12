@@ -1,39 +1,14 @@
-from ClassLib import *
-from MetaApp import MetaApi
-from Forex_api import ForexApi
+from ForexApi import ForexApi
+import threading
 import threading
 from flask import Flask, request, render_template , jsonify
 import asyncio
-import __main__
 
-# setting Attributes to Main
-setattr(__main__ , 'NoiseEnhancer' ,NoiseEnhancer)
-setattr(__main__ , 'BaggingBootstrapper' ,BaggingBootstrapper)
+api = ForexApi()
 
-currency = ['EURUSD' ,'GBPUSD' , 'NZDUSD']
+async def place_order():
+    await api.start()
 
-
-ForexApi.SIG_GEN = MetaApi()
-fx = ForexApi()
-
-
-async def primary_task():
-        fx.RefreshVar()
-        fx.symbol_list = currency
-        fx.action='close_all_positions'
-        await fx.start()
-
-
-async def secondary_task():
-        fx.RefreshVar()
-        fx.symbol_list = currency
-        fx.action = 'execute_signals'
-        await fx.start()
-
-        if fx.error:
-            fx.SIG_GEN.send_email_notification(fx.error)
-        else:
-            fx.SIG_GEN.send_email_notification(fx.Signals)
 
 def run_async(x):
     asyncio.run(x)
@@ -47,23 +22,10 @@ def Homepage():
     return render_template('index.html', title=title)
 
 
-@app.route('/ping')
-def pinger():
-    return jsonify({"ping": "ok"})
-
-
-@app.route('/close_all_positions')
-def process_positions():
-
-    t = threading.Thread(target=run_async , args=(primary_task() , ))
-    t.start()
-
-    return jsonify({"status": "ok"})
-
 @app.route('/submit_signals')
 def submit_signal():
 
-    t = threading.Thread(target=run_async , args=(secondary_task() , ))
+    t = threading.Thread(target=run_async , args=(place_order() , ))
     t.start()
 
     return jsonify({"status": "ok"})
@@ -71,6 +33,3 @@ def submit_signal():
 
 if __name__ == '__main__':
     app.run(debug=True)
-
-
-
