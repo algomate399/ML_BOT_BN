@@ -153,6 +153,7 @@ class ForexApi:
         async with asyncio.timeout(12):
             __msg__=await self.ws.recv()
             msg=json.loads(__msg__)
+            print('msg' , msg)
             self.SIG_GEN.send_email_notification(msg)
 
     def compute_lot_size(self) :
@@ -263,5 +264,6 @@ class ForexApi:
                     return
 
                 await self.execute_signals()
+
 
             await self.ws.close()
