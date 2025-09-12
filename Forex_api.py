@@ -149,7 +149,7 @@ class ForexApi:
                 "relativeStopLoss" : sl
             }
         }
-
+        self.ord_payload = payload
         await self.ws.send(json.dumps(payload))
 
 
@@ -264,4 +264,5 @@ class ForexApi:
 
 
             await self.ws.close()
+
 
