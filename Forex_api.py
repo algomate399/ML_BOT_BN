@@ -256,8 +256,8 @@ class ForexApi:
 
                 if self.SIG_GEN.error:
                     self.error.append(self.SIG_GEN.error)
-                    await self.ws.close()
-                    return
+                #     await self.ws.close()
+                #     return
 
                 await self.execute_signals()
 
