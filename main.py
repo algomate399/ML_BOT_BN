@@ -12,8 +12,10 @@ setattr(__main__ , 'BaggingBootstrapper' ,BaggingBootstrapper)
 
 currency = ['EURUSD' ,'GBPUSD' , 'NZDUSD']
 
-api = MetaApi()
+
+ForexApi.SIG_GEN = MetaApi()
 fx = ForexApi()
+
 
 async def primary_task():
         fx.RefreshVar()
@@ -23,23 +25,15 @@ async def primary_task():
 
 
 async def secondary_task():
-        api.Refresh_Var()
-        api.UpdateHistory()
-        api.GenerateSignal()
-        sig_sum = np.sum([abs(s) for s in api.Signals.values()])
-        if sig_sum:
-            fx.RefreshVar()
-            fx.symbol_list=currency
-            fx.action='execute_signals'
-            fx.Signals = api.Signals
-            fx.sl_in_pips = api.Sl_in_PiP
-            await fx.start()
+        fx.RefreshVar()
+        fx.symbol_list = currency
+        fx.action = 'execute_signals'
+        await fx.start()
 
-        if api.error :
-            api.send_email_notification(api.error)
-        else :
-            api.send_email_notification(api.Signals)
-
+        if fx.error:
+            fx.SIG_GEN.send_email_notification(fx.error)
+        else:
+            fx.SIG_GEN.send_email_notification(fx.Signals)
 
 def run_async(x):
     asyncio.run(x)
@@ -53,8 +47,13 @@ def Homepage():
     return render_template('index.html', title=title)
 
 
+@app.route('/ping')
+def pinger():
+    return jsonify({"ping": "ok"})
+
+
 @app.route('/close_all_positions')
-def process_signals():
+def process_positions():
 
     t = threading.Thread(target=run_async , args=(primary_task() , ))
     t.start()
