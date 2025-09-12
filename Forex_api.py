@@ -151,6 +151,8 @@ class ForexApi:
         }
 
         await self.ws.send(json.dumps(payload))
+        __msg__ = await self.ws.recv()
+        self.ord_msg = json.loads(__msg__)
 
     def compute_lot_size(self) :
         # setting variables
@@ -260,5 +262,6 @@ class ForexApi:
                     return
 
                 await self.execute_signals()
+
 
             await self.ws.close()
