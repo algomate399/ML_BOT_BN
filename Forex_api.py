@@ -136,6 +136,9 @@ class ForexApi:
     async def send_market_order(self ,symbol , trade_side , volume , sl):
         
         print('trade_side' , trade_side , type(trade_side))
+        print('symbol_id' , self.symbol_id[symbol] , type(self.symbol_id[symbol]))
+        print('volume' , volume , type(volume))
+        print('relativeStopLoss' , relativeStopLoss , type(relativeStopLoss))
         
         var = 1 if trade_side > 0 else 2
 
@@ -150,11 +153,7 @@ class ForexApi:
                 "relativeStopLoss" : sl
             }
         }
-        print('trade_side' , trade_side , type(trade_side))
-        print('symbol_id' , self.symbol_id[symbol] , type(self.symbol_id[symbol]))
-        print('volume' , volume , type(volume))
-        print('relativeStopLoss' , relativeStopLoss , type(relativeStopLoss))
-        
+
         await self.ws.send(json.dumps(payload))
 
     def compute_lot_size(self) :
@@ -268,3 +267,4 @@ class ForexApi:
 
 
             await self.ws.close()
+
