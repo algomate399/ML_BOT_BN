@@ -12,10 +12,8 @@ setattr(__main__ , 'BaggingBootstrapper' ,BaggingBootstrapper)
 
 currency = ['EURUSD' ,'GBPUSD' , 'NZDUSD']
 
-
-ForexApi.SIG_GEN = MetaApi()
+api = MetaApi()
 fx = ForexApi()
-
 
 async def primary_task():
         fx.RefreshVar()
@@ -25,15 +23,23 @@ async def primary_task():
 
 
 async def secondary_task():
-        fx.RefreshVar()
-        fx.symbol_list = currency
-        fx.action = 'execute_signals'
-        await fx.start()
+        api.Refresh_Var()
+        api.UpdateHistory()
+        api.GenerateSignal()
+        sig_sum = np.sum([abs(s) for s in api.Signals.values()])
+        if sig_sum:
+            fx.RefreshVar()
+            fx.symbol_list=currency
+            fx.action='execute_signals'
+            fx.Signals = api.Signals
+            fx.sl_in_pips = api.Sl_in_PiP
+            await fx.start()
 
-        if fx.error:
-            fx.SIG_GEN.send_email_notification(fx.error)
-        else:
-            fx.SIG_GEN.send_email_notification(fx.Signals)
+        if api.error :
+            api.send_email_notification(api.error)
+        else :
+            api.send_email_notification(api.Signals)
+
 
 def run_async(x):
     asyncio.run(x)
@@ -47,37 +53,21 @@ def Homepage():
     return render_template('index.html', title=title)
 
 
-@app.route('/ping')
-def pinger():
-    return jsonify({"ping": "ok"})
-
-
 @app.route('/close_all_positions')
-def process_positions():
+def process_signals():
 
     t = threading.Thread(target=run_async , args=(primary_task() , ))
     t.start()
 
     return jsonify({"status": "ok"})
 
-
-@app.route('/process_signals')
-def process_signals():
+@app.route('/submit_signals')
+def submit_signal():
 
     t = threading.Thread(target=run_async , args=(secondary_task() , ))
     t.start()
 
     return jsonify({"status": "ok"})
-
-
-@app.route('/get_signals')
-def get_signals():
-
-    result = {}
-    for s in fx.Signals:
-        result[s] = {'SymbolName':s,'trade_side':fx.Signals[s]  , 'lot_size':fx.lot_size[s] , 'sl':fx.sl_in_pips[s]}
-
-    return jsonify({'results':result})
 
 
 if __name__ == '__main__':

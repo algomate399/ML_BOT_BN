@@ -6,7 +6,7 @@ from datetime import datetime
 import smtplib
 from email.mime.text import MIMEText
 from StrategyRep import PredictorEngine
-from Params import Strategy_On_params
+from Params import Strategy_On_params , GetHistory
 
 
 class MetaApi:
@@ -16,6 +16,8 @@ class MetaApi:
         self.time_zone = pytz.timezone('Asia/kolkata')
         self.error = None
         self.models = {}
+        self.Signals ={}
+        self.Sl_in_PiP = {}
         self.symbol_list=np.unique([ticker for ticker in Strategy_On_params])
         self.load_Strategy()
 
@@ -31,6 +33,7 @@ class MetaApi:
 
     def Refresh_Var(self):
         self.error=None
+        self.Signals={}
 
         # removing redundant file from the database_fx
         for symbol in self.symbol_list:
@@ -50,11 +53,11 @@ class MetaApi:
             self.error='Error:@load_strategy:{}'.format(e)
             print(self.error)
 
-    async def UpdateHistory(self ,fetcher) :
+    def UpdateHistory(self) :
         try :
             bars = {}
             for s in self.symbol_list:
-                bars[s] = await fetcher.GetHistory(s)
+                bars[s] = GetHistory(s)
             if bars :
                 self.Symbol_historyUpdates=[symbol for symbol in bars]
                 for symbol , history in bars.items() :
@@ -66,8 +69,8 @@ class MetaApi:
 
     def GenerateSignal(self):
         try:
-            Signals = {}
-            Sl_in_PiP = {}
+            self.Signals = {}
+            self.Sl_in_PiP = {}
             Updated_symbol = list(set(self.symbol_list) & set(self.Symbol_historyUpdates))
 
             for ticker in Updated_symbol:
@@ -81,10 +84,8 @@ class MetaApi:
                         time.sleep(3)
 
                 if SIG:
-                    Signals[ticker] = SIG
-                    Sl_in_PiP[ticker] = SL[1 if SIG > 0 else -1] if SIG else 0
-
-            return Signals , Sl_in_PiP
+                    self.Signals[ticker] = SIG
+                    self.Sl_in_PiP[ticker] = SL[1 if SIG > 0 else -1] if SIG else 0
 
         except Exception as e:
             self.error="Error:@GEN_SIGNALS:{}".format(e)

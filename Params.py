@@ -4,6 +4,10 @@ import pandas as pd
 import numpy as np
 from hurst import compute_Hc
 from sklearn.linear_model import LinearRegression
+from Credit import API_KEY
+from datetime import datetime ,timedelta
+import requests
+from pytz import timezone
 
 
 # defining strategy parameters
@@ -71,3 +75,33 @@ def ComputeRegime_HURST(dt , window):
     rolling_hurst_exponents = dt.rolling(window=window).apply(lambda X: compute_Hc(X)[0] , raw =False)
     regime = pd.Series(rolling_hurst_exponents , rolling_hurst_exponents.index  , name = 'HurstRegime')
     return regime
+
+
+def GetHistory(symbol , limit=5000, days = 365):
+    t_zone =timezone('Asia/Kolkata')
+
+    end_date = datetime.now(t_zone).strftime("%Y-%m-%d")
+    start_date = (datetime.now(t_zone) - timedelta(days=days)).strftime("%Y-%m-%d")
+    symbol = 'C:'+symbol
+    url = f"https://api.polygon.io/v2/aggs/ticker/{symbol}/range/1/day/{start_date}/{end_date}"
+    params = {
+        "adjusted": "true",
+        "sort": "asc",
+        "limit": limit,
+        "apiKey": API_KEY
+    }
+    r = requests.get(url, params=params)
+    r.raise_for_status()
+    data = r.json()
+
+    if "results" not in data:
+        print("No data returned:", data)
+        return pd.DataFrame()
+
+    df = pd.DataFrame(data["results"])
+    df["t"] = pd.to_datetime(df["t"], unit="ms")  # timestamp → datetime
+    df = df.rename(columns={"t":"time", "o":"open", "h":"high", "l":"low", "c":"close", "v":"volume"})
+    df = df.set_index('time')
+    return df[["open", "high", "low", "close"]]
+
+
