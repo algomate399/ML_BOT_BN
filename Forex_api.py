@@ -4,9 +4,9 @@ import json
 from Credit import *
 import math
 from Params import Weights
-from datetime import datetime, timedelta,timezone
+from datetime import datetime, timedelta
 from pytz import timezone
-import asyncio
+
 
 def trend_bar_transformer(trendbar: dict):
     tz = timezone("Asia/Kolkata")
@@ -150,11 +150,6 @@ class ForexApi:
             }
         }
         await self.ws.send(json.dumps(payload))
-        async with asyncio.timeout(12):
-            __msg__=await self.ws.recv()
-            msg=json.loads(__msg__)
-            print('msg' , msg)
-            self.SIG_GEN.send_email_notification(msg)
 
     def compute_lot_size(self) :
         # setting variables
@@ -264,6 +259,5 @@ class ForexApi:
                     return
 
                 await self.execute_signals()
-
 
             await self.ws.close()
