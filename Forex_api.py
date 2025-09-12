@@ -138,7 +138,7 @@ class ForexApi:
         print('trade_side' , trade_side , type(trade_side))
         print('symbol_id' , self.symbol_id[symbol] , type(self.symbol_id[symbol]))
         print('volume' , volume , type(volume))
-        print('relativeStopLoss' , relativeStopLoss , type(relativeStopLoss))
+        print('sl' , sl , type(sl))
         
         var = 1 if trade_side > 0 else 2
 
@@ -267,4 +267,5 @@ class ForexApi:
 
 
             await self.ws.close()
+
 
