@@ -29,9 +29,7 @@ async def secondary_task():
         fx.symbol_list = currency
         fx.action = 'execute_signals'
         await fx.start()
-        
-        fx.SIG_GEN.send_email_notification(fx.ord_msg)
-        
+
         if fx.error:
             fx.SIG_GEN.send_email_notification(fx.error)
         else:
@@ -73,6 +71,7 @@ def submit_signal():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
 
 
 
