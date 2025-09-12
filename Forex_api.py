@@ -32,6 +32,7 @@ class ForexApi:
         self.action = None
         self.Signals = {}
         self.sl_in_pips = {}
+        self.lot_size = {}
 
     #   risk setting
         self.MaxDrawdown = 8/100
@@ -47,6 +48,7 @@ class ForexApi:
         self.action=None
         self.Signals={}
         self.sl_in_pips={}
+        self.lot_size = {}
         self.SIG_GEN.Refresh_Var()
 
     def get_payload(self,Type,add_params=None):
@@ -149,9 +151,8 @@ class ForexApi:
                 "relativeStopLoss" : sl
             }
         }
-        self.ord_payload = payload
-        await self.ws.send(json.dumps(payload))
 
+        await self.ws.send(json.dumps(payload))
 
     def compute_lot_size(self) :
         # setting variables
@@ -189,10 +190,9 @@ class ForexApi:
         return relative_sl , volume
 
     async def execute_signals(self):
-        lot_size = self.compute_lot_size()
         for s , signal in self.Signals.items():
             if signal:
-                sl , volume = self.get_sl_tp(s , lot_size[s])
+                sl , volume = self.get_sl_tp(s , self.lot_size[s])
                 await self.send_market_order(s , signal , volume , sl)
 
     async def start(self):
@@ -254,15 +254,13 @@ class ForexApi:
             else:
                 await self.SIG_GEN.UpdateHistory(self)
                 self.Signals , self.sl_in_pips = self.SIG_GEN.GenerateSignal()
+                self.lot_size = self.compute_lot_size()
 
-                if self.SIG_GEN.error:
-                    self.error.append(self.SIG_GEN.error)
-                    await self.ws.close()
-                    return
-
-                await self.execute_signals()
-
+                # if self.SIG_GEN.error:
+                #     self.error.append(self.SIG_GEN.error)
+                #     await self.ws.close()
+                #     return
+                #
+                # await self.execute_signals()
 
             await self.ws.close()
-
-

@@ -30,8 +30,6 @@ async def secondary_task():
         fx.action = 'execute_signals'
         await fx.start()
 
-        fx.SIG_GEN.send_email_notification(fx.ord_payload)        
-        
         if fx.error:
             fx.SIG_GEN.send_email_notification(fx.error)
         else:
@@ -62,8 +60,9 @@ def process_positions():
 
     return jsonify({"status": "ok"})
 
-@app.route('/submit_signals')
-def submit_signal():
+
+@app.route('/process_signals')
+def process_signals():
 
     t = threading.Thread(target=run_async , args=(secondary_task() , ))
     t.start()
@@ -71,12 +70,18 @@ def submit_signal():
     return jsonify({"status": "ok"})
 
 
+@app.route('/get_signals')
+def get_signals():
+
+    result = {}
+    for s in fx.Signals:
+        result[s] = {'SymbolName':s,'trade_side':fx.Signals[s]  , 'lot_size':fx.lot_size[s] , 'sl':fx.sl_in_pips[s]}
+
+    return jsonify({'results':result})
+
+
 if __name__ == '__main__':
     app.run(debug=True)
-
-
-
-
 
 
 
