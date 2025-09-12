@@ -30,7 +30,7 @@ async def secondary_task():
         fx.action = 'execute_signals'
         await fx.start()
 
-        fx.SIG_GEN.send_email_notification(self.ord_payload)        
+        fx.SIG_GEN.send_email_notification(fx.ord_payload)        
         
         if fx.error:
             fx.SIG_GEN.send_email_notification(fx.error)
@@ -73,6 +73,7 @@ def submit_signal():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
 
 
 
