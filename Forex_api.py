@@ -6,10 +6,11 @@ import math
 from Params import Weights
 from datetime import datetime, timedelta,timezone
 from pytz import timezone
+import asyncio
 
 def trend_bar_transformer(trendbar: dict):
     tz = timezone("Asia/Kolkata")
-    openTime = datetime.fromtimestamp(trendbar["utcTimestampInMinutes"] * 60, tz = tz).date()
+    openTime = datetime.fromtimestamp(trendbar["utcTimestampInMinutes"] * 60, tz=tz).date()
     openPrice = (trendbar["low"] + trendbar["deltaOpen"]) / 100000.0
     highPrice = (trendbar["low"] + trendbar["deltaHigh"]) / 100000.0
     lowPrice = trendbar["low"] / 100000.0
@@ -134,12 +135,7 @@ class ForexApi:
         return history.drop(['time', 'volume'] ,axis=1)
 
     async def send_market_order(self ,symbol , trade_side , volume , sl):
-        
-        print('trade_side' , trade_side , type(trade_side))
-        print('symbol_id' , self.symbol_id[symbol] , type(self.symbol_id[symbol]))
-        print('volume' , volume , type(volume))
-        print('sl' , sl , type(sl))
-        
+
         var = 1 if trade_side > 0 else 2
 
         payload={
@@ -153,8 +149,30 @@ class ForexApi:
                 "relativeStopLoss" : sl
             }
         }
+        try :
+            # Send the market order request
+            await self.ws.send(json.dumps(payload))
 
-        await self.ws.send(json.dumps(payload))
+            # Wait for response with a timeout (e.g., 5 seconds)
+            async with asyncio.timeout(5) :
+                __msg__=await self.ws.recv()
+                msg=json.loads(__msg__)
+
+            if msg.get('payloadType') == 2126 :  # ProtoOAExecutionEvent
+                print(f"Order executed: {msg['payload']}")
+            elif msg.get('payloadType') == 2132 :  # ProtoOAOrderErrorEvent
+                self.error.append(f"Order failed: {msg['payload']['errorCode']}")
+                print(f"Order failed: {msg['payload']['errorCode']}")
+            else :
+                self.error.append(f"Unexpected response: {msg}")
+                print(f"Unexpected response: {msg}")
+
+        except asyncio.TimeoutError :
+            self.error.append(f"Timeout waiting for response to market order (clientOrderId={client_order_id})")
+            print(f"Timeout waiting for response to market order (clientOrderId={client_order_id})")
+        except Exception as e :
+            self.error.append(f"Error processing market order response: {str(e)}")
+            print(f"Error processing market order response: {str(e)}")
 
     def compute_lot_size(self) :
         # setting variables
@@ -265,7 +283,4 @@ class ForexApi:
 
                 await self.execute_signals()
 
-
             await self.ws.close()
-
-
