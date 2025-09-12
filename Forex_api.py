@@ -135,8 +135,7 @@ class ForexApi:
 
     async def send_market_order(self ,symbol , trade_side , volume , sl):
 
-        if trade_side <0 :
-            trade_side =2
+        var = 1 if trade_side > 0 else 2
 
         payload={
             "payloadType" : 2106 ,
@@ -144,12 +143,11 @@ class ForexApi:
                 "ctidTraderAccountId" : self.current_account_id ,
                 "symbolId" : self.symbol_id[symbol] ,
                 "orderType" : 1 ,
-                "tradeSide": trade_side,
+                "tradeSide": var,
                 "volume" : volume,
                 "relativeStopLoss" : sl
             }
         }
-
         await self.ws.send(json.dumps(payload))
 
     def compute_lot_size(self) :
@@ -210,7 +208,7 @@ class ForexApi:
 
                     __msg__=await self.ws.recv()
                     msg=json.loads(__msg__)
-                    self.current_account_id = msg["payload"]["ctidTraderAccountId"]
+                    self.current_account_id = int(msg["payload"]["ctidTraderAccountId"])
 
             except Exception as e:
                     err = 'Unable to connect:{}'.format(e)

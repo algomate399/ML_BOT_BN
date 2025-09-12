@@ -47,6 +47,11 @@ def Homepage():
     return render_template('index.html', title=title)
 
 
+@app.route('/ping')
+def pinger():
+    return jsonify({"ping": "ok"})
+
+
 @app.route('/close_all_positions')
 def process_positions():
 
