@@ -180,10 +180,11 @@ class ForexApi:
     async def execute_signals(self) :
         trade_dict={'symbol' : 'GBPUSD' , "trade_side" : 1 , "volume" : int(0.02 * 100000 * 100) , 'sl' : 558}
         # lot_size=self.compute_lot_size()
-        for s , signal in self.Signals.items() :
-            if signal :
+        # for s , signal in self.Signals.items() :
+        #     if signal :
                 # sl , volume=self.get_sl_tp(s , lot_size[s])
-                await self.send_market_order(**trade_dict)
+
+        await self.send_market_order(**trade_dict)
 
     async def start(self):
         async with websockets.connect(self.url) as self.ws :
