@@ -1,7 +1,8 @@
-from ForexApi import ForexApi
 from ClassLib import *
+from MetaApp import MetaApi
+from Forex_api import ForexApi
 import threading
-from flask import Flask,  render_template , jsonify
+from flask import Flask, render_template , jsonify
 import asyncio
 import __main__
 
@@ -11,15 +12,30 @@ setattr(__main__ , 'BaggingBootstrapper' ,BaggingBootstrapper)
 
 currency = ['EURUSD' ,'GBPUSD' , 'NZDUSD']
 
+
 fx = ForexApi()
+fx.api = MetaApi()
 
+async def primary_task():
+        fx.RefreshVar()
+        fx.symbol_list = currency
+        fx.action='close_all_positions'
+        await fx.start()
 
-async def place_order():
-    fx.RefreshVar()
-    fx.symbol_list = currency
-    await fx.start()
-    print(fx.error)
+async def secondary_task_1():
+        fx.symbol_list=currency
+        fx.action='process_signals'
+        await fx.start()
 
+async def secondary_task_2():
+        fx.symbol_list = currency
+        fx.action = 'execute_signals'
+        await fx.start()
+
+        # if fx.error:
+        #     fx.api.send_email_notification(fx.error)
+        # else:
+        #     fx.api.send_email_notification(fx.Signals)
 
 def run_async(x):
     asyncio.run(x)
@@ -33,10 +49,33 @@ def Homepage():
     return render_template('index.html', title=title)
 
 
-@app.route('/submit_signals')
-def submit_signal():
+@app.route('/ping')
+def pinger():
+    return jsonify({"ping": "ok"})
 
-    t = threading.Thread(target=run_async , args=(place_order() , ))
+
+@app.route('/close_all_positions')
+def process_positions():
+
+    t = threading.Thread(target=run_async , args=(primary_task() , ))
+    t.start()
+
+    return jsonify({"status": "ok"})
+
+
+@app.route('/process_signals')
+def process_signals():
+
+    t = threading.Thread(target=run_async , args=(secondary_task_1() , ))
+    t.start()
+
+    return jsonify({"status": "ok"})
+
+
+@app.route('/submit_signals')
+def submit_signals():
+
+    t = threading.Thread(target=run_async , args=(secondary_task_2() , ))
     t.start()
 
     return jsonify({"status": "ok"})
@@ -44,3 +83,6 @@ def submit_signal():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+
+

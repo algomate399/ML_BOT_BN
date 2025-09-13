@@ -26,7 +26,7 @@ class MetaApi:
         self.recipient_mail='tapasguha258@gmail.com'
 
         # sending email response :
-        # msg='Engine refreshed @ :{}'.format(datetime.now(self.time_zone))
+        msg='Engine refreshed @ :{}'.format(datetime.now(self.time_zone))
         # self.send_email_notification(msg)
 
     def Refresh_Var(self):
@@ -50,12 +50,19 @@ class MetaApi:
             self.error='Error:@load_strategy:{}'.format(e)
             print(self.error)
 
-    def UpdateHistory(self ,bars) :
-        if bars :
-            self.Symbol_historyUpdates=[symbol for symbol in bars]
-            for symbol , history in bars.items() :
-                file_path=os.path.join('database_fx' , symbol , '{}.csv'.format(symbol))
-                history.to_csv(file_path)
+    async def UpdateHistory(self ,fetcher) :
+        try :
+            bars = {}
+            for s in self.symbol_list:
+                bars[s] = await fetcher.GetHistory(s)
+            if bars :
+                self.Symbol_historyUpdates=[symbol for symbol in bars]
+                for symbol , history in bars.items() :
+                    file_path=os.path.join('database_fx' , symbol , '{}.csv'.format(symbol))
+                    history.to_csv(file_path)
+        except Exception as e :
+            self.error='Error:@UpdateHistory:{}'.format(e)
+            print(self.error)
 
     def GenerateSignal(self):
         try:
