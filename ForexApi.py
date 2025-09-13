@@ -234,8 +234,9 @@ class ForexApi:
             self.__patch_symbol_id(msg)
 
             await self.UpdateHistory()
-            self.Signals , self.sl_in_pips = self.api.GenerateSignal()
-            print('Signal' , self.Signals  , 'sl' , self.sl_in_pips)
+
+            # self.Signals , self.sl_in_pips = self.api.GenerateSignal()
+            # print('Signal' , self.Signals  , 'sl' , self.sl_in_pips)
             #
             await self.execute_signals()
 
