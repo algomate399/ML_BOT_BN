@@ -32,10 +32,10 @@ async def secondary_task_2():
         fx.action = 'execute_signals'
         await fx.start()
 
-        # if fx.error:
-        #     fx.api.send_email_notification(fx.error)
-        # else:
-        #     fx.api.send_email_notification(fx.Signals)
+        if fx.error:
+            fx.api.send_email_notification(fx.error)
+        else:
+            fx.api.send_email_notification(fx.Signals)
 
 def run_async(x):
     asyncio.run(x)

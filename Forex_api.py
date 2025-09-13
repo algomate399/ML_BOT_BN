@@ -132,7 +132,7 @@ class ForexApi:
         Daily_bars.extend(list(map(trend_bar_transformer , msg['payload']['trendbar'])))
         history = pd.DataFrame(Daily_bars , columns=['time' , 'open' ,'high' , 'low' , 'close' , 'volume'])
         history.index = history['time']
-        return history.drop(['time', 'volume'] ,axis=1).iloc[:-1]
+        return history.drop(['time', 'volume'] ,axis=1)
 
     async def send_market_order(self ,symbol , trade_side , volume , sl):
 
@@ -150,12 +150,7 @@ class ForexApi:
             }
         }
 
-        print('OrderPayload' , payload)
         await self.ws.send(json.dumps(payload))
-        async with asyncio.timeout(10) :
-            __msg__=await self.ws.recv()
-            msg=json.loads(__msg__)
-            print('msg' , msg)
 
     def compute_lot_size(self) :
         # setting variables
@@ -263,7 +258,9 @@ class ForexApi:
 
             # closing the socket
             await self.ws.close()
+            self.ws = None
 
+        # processing signal generation outside ws
         if self.action != 'process_signals':
             return
 
@@ -272,4 +269,3 @@ class ForexApi:
         else:
             self.Signals , self.sl_in_pips=self.api.GenerateSignal()
 
-        print(self.Signals , self.sl_in_pips)
