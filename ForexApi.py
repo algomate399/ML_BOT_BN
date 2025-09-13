@@ -240,7 +240,7 @@ class ForexApi:
             # self.symbol_id={'GBPUSD' : 2}
             # candles = await self.GetHistory('GBPUSD')
             # print('candles' , candles)
-            # trade_dict = {'symbol': 'GBPUSD' ,"trade_side" :1  , "volume": int(0.02 * 100000 * 100) ,'sl': 558}
-            # await self.send_market_order(**trade_dict)
+            trade_dict = {'symbol': 'GBPUSD' ,"trade_side" :1  , "volume": int(0.02 * 100000 * 100) ,'sl': 558}
+            await self.send_market_order(**trade_dict)
 
             await self.ws.close()
