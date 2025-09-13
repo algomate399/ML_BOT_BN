@@ -29,7 +29,7 @@ class ForexApi:
         self.symbol_list = []
         self.Signals = {}
         self.sl_in_pips = {}
-        self.ws  = None
+        self.ws = None
 
     #   Initializing strategy obj
         self.api = MetaApi()
@@ -231,11 +231,11 @@ class ForexApi:
             msg=json.loads(__msg__)
             self.__patch_symbol_id(msg)
 
-            await self.UpdateHistory()
-            self.Signals , self.sl_in_pips = self.api.GenerateSignal()
-            print('Signal' , self.Signals  , 'sl' , self.sl_in_pips)
-
-            await self.execute_signals()
+            # await self.UpdateHistory()
+            # self.Signals , self.sl_in_pips = self.api.GenerateSignal()
+            # print('Signal' , self.Signals  , 'sl' , self.sl_in_pips)
+            #
+            # await self.execute_signals()
 
             # self.symbol_id={'GBPUSD' : 2}
             # candles = await self.GetHistory('GBPUSD')
