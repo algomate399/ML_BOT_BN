@@ -1,13 +1,24 @@
 from ForexApi import ForexApi
+from ClassLib import *
 import threading
-import threading
-from flask import Flask, request, render_template , jsonify
+from flask import Flask,  render_template , jsonify
 import asyncio
+import __main__
 
-api = ForexApi()
+# setting Attributes to Main
+setattr(__main__ , 'NoiseEnhancer' ,NoiseEnhancer)
+setattr(__main__ , 'BaggingBootstrapper' ,BaggingBootstrapper)
+
+currency = ['EURUSD' ,'GBPUSD' , 'NZDUSD']
+
+fx = ForexApi()
+
 
 async def place_order():
-    await api.start()
+    fx.RefreshVar()
+    fx.symbol_list = currency
+    await fx.start()
+    print(fx.error)
 
 
 def run_async(x):

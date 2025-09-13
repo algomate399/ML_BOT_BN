@@ -1,5 +1,7 @@
 import websockets
+from MetaApp import MetaApi
 from Credit import*
+from Params import Weights
 import json
 import math
 import asyncio
@@ -25,13 +27,27 @@ class ForexApi:
         self.account_balance = None
         self.symbol_id = {}
         self.symbol_list = []
+        self.Signals = {}
+        self.sl_in_pips = {}
+        self.ws  = None
+
+    #   Initializing strategy obj
+        self.api = MetaApi()
+
+    #   risk setting
+        self.MaxDrawdown=8/100
+        self.DailyRiskDrawdown=5/100
 
     def RefreshVar(self):
+        self.api.Refresh_Var()
         self.current_account_id=None
         self.error=[]
         self.account_balance=None
         self.symbol_id={}
         self.symbol_list=[]
+        self.Signals = {}
+        self.sl_in_pips = {}
+        self.ws=None
 
     def get_payload(self   , Type , add_params=None):
         payloadType=payload=None
@@ -64,8 +80,17 @@ class ForexApi:
                          "period": 12,
                           "symbolId" : add_params['symbolId']
                        }
+        elif Type == 'symbol_id' :
+            payloadType=2114
+            payload={"ctidTraderAccountId" : ctid_trader_account_id , "includeArchivedSymbols" : False}
 
         return json.dumps({"payloadType":payloadType , "payload":payload})
+
+    def __patch_symbol_id(self , msg) :
+        for s in self.symbol_list :
+            symbols=msg['payload']
+            symbolsFilterResult=list(filter(lambda symbol : symbol['symbolName'] == s , symbols['symbol']))[0]
+            self.symbol_id[s]=int(symbolsFilterResult['symbolId'])
 
     async def GetHistory(self , symbol):
         payload = self.get_payload('GetTrendBars' , {'symbolId':self.symbol_id[symbol]})
@@ -82,7 +107,53 @@ class ForexApi:
         Daily_bars.extend(list(map(trend_bar_transformer , msg['payload']['trendbar'])))
         history = pd.DataFrame(Daily_bars , columns=['time' , 'open' ,'high' , 'low' , 'close' , 'volume'])
         history.index = history['time']
-        return history.drop(['time', 'volume'] ,axis=1)
+        return history.drop(['time', 'volume'] ,axis=1).iloc[:-1]
+
+    async def UpdateHistory(self):
+        candles={}
+        for s in self.symbol_list :
+            try:
+                candles[s]=await self.GetHistory(s)
+            except Exception as e :
+                err='Error:@UpdateHistory:{}'.format(e)
+                self.error.append(err)
+
+        self.api.UpdateHistory(candles)
+
+    def compute_lot_size(self) :
+        # setting variables
+        pip_size=lambda s : 0.01 if ('XAUUSD' == s) else (0.001 if "XAGUSD" == s else 0.0001)
+        contract_size=lambda s : 100 if ('XAUUSD' == s) else (5000 if "XAGUSD" == s else 100000)
+        min_lot_size=0.01
+
+        # max drawdown in $
+        max_dd= self.account_balance * self.MaxDrawdown
+
+        # daily risk budget in $
+        daily_risk=max_dd * self.DailyRiskDrawdown
+
+        lot_sizes={}
+
+        for symbol in self.Signals :
+
+            # risk money allocated to this instrument
+            risk_money=daily_risk * Weights[symbol]
+
+            # lot size formula
+            pip_value=contract_size(symbol) * pip_size(symbol)
+            lot_size=risk_money / (self.sl_in_pips[symbol] * pip_value)
+            lot_sizes[symbol]=max(round(lot_size , 2) , min_lot_size)
+
+        return lot_sizes
+
+    def get_sl_tp(self , symbol  , lot_size):
+        contract_size = 100 if ('XAUUSD' == symbol) else (5000 if "XAGUSD" == symbol else 100000)
+        pip_size=0.01 if ('XAUUSD' == symbol) else (0.001 if "XAGUSD" == symbol else 0.0001)
+        pip_pos=abs(int(round(math.log10(1 / pip_size))))
+        units_per_pip=10 ** (5-pip_pos)
+        relative_sl=int(round(self.sl_in_pips[symbol] * units_per_pip))
+        volume = int(lot_size * contract_size * 100)
+        return relative_sl , volume
 
     async def send_market_order(self ,symbol , trade_side , volume , sl):
 
@@ -99,11 +170,19 @@ class ForexApi:
                 "relativeStopLoss" : sl
             }
         }
+        print('OrderPayload' , payload)
         await self.ws.send(json.dumps(payload))
         async with asyncio.timeout(10):
             __msg__=await self.ws.recv()
             msg=json.loads(__msg__)
             print('msg' , msg)
+
+    async def execute_signals(self) :
+        lot_size=self.compute_lot_size()
+        for s , signal in self.Signals.items() :
+            if signal :
+                sl , volume=self.get_sl_tp(s , lot_size[s])
+                await self.send_market_order(s , signal , volume , sl)
 
     async def start(self):
         async with websockets.connect(self.url) as self.ws :
@@ -130,8 +209,38 @@ class ForexApi:
                 await self.ws.close()
                 return
 
-            self.symbol_id={'GBPUSD' : 2}
-            candles = await self.GetHistory('GBPUSD')
-            print('candles' , candles)
-            trade_dict = {'symbol': 'GBPUSD' ,"trade_side" :1  , "volume": int(0.02 * 100000 * 100) ,'sl': 558}
-            await self.send_market_order(**trade_dict)
+            payload = self.get_payload('AccountBal')
+            await self.ws.send(payload)
+
+            __msg__=await self.ws.recv()
+            msg=json.loads(__msg__)
+
+            if 'trader' not in msg.get('payload'):
+                err = {'AccountBal:Error{}'.format(msg)}
+                self.error.append(err)
+                await self.ws.close()
+                return
+
+            account_info = msg['payload']['trader']
+            self.account_balance = account_info.get('balance')/(10**account_info.get('moneyDigits'))
+
+            payload = self.get_payload('symbol_id')
+            await self.ws.send(payload)
+
+            __msg__=await self.ws.recv()
+            msg=json.loads(__msg__)
+            self.__patch_symbol_id(msg)
+
+            await self.UpdateHistory()
+            self.Signals , self.sl_in_pips = self.api.GenerateSignal()
+            print('Signal' , self.Signals  , 'sl' , self.sl_in_pips)
+
+            await self.execute_signals()
+
+            # self.symbol_id={'GBPUSD' : 2}
+            # candles = await self.GetHistory('GBPUSD')
+            # print('candles' , candles)
+            # trade_dict = {'symbol': 'GBPUSD' ,"trade_side" :1  , "volume": int(0.02 * 100000 * 100) ,'sl': 558}
+            # await self.send_market_order(**trade_dict)
+
+            await self.ws.close()
