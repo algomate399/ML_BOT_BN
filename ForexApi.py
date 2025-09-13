@@ -178,11 +178,12 @@ class ForexApi:
             print('msg' , msg)
 
     async def execute_signals(self) :
-        lot_size=self.compute_lot_size()
+        trade_dict={'symbol' : 'GBPUSD' , "trade_side" : 1 , "volume" : int(0.02 * 100000 * 100) , 'sl' : 558}
+        # lot_size=self.compute_lot_size()
         for s , signal in self.Signals.items() :
             if signal :
-                sl , volume=self.get_sl_tp(s , lot_size[s])
-                await self.send_market_order(s , signal , volume , sl)
+                # sl , volume=self.get_sl_tp(s , lot_size[s])
+                await self.send_market_order(**trade_dict)
 
     async def start(self):
         async with websockets.connect(self.url) as self.ws :
@@ -231,16 +232,16 @@ class ForexApi:
             msg=json.loads(__msg__)
             self.__patch_symbol_id(msg)
 
-            # await self.UpdateHistory()
-            # self.Signals , self.sl_in_pips = self.api.GenerateSignal()
-            # print('Signal' , self.Signals  , 'sl' , self.sl_in_pips)
+            await self.UpdateHistory()
+            self.Signals , self.sl_in_pips = self.api.GenerateSignal()
+            print('Signal' , self.Signals  , 'sl' , self.sl_in_pips)
             #
-            # await self.execute_signals()
+            await self.execute_signals()
 
             # self.symbol_id={'GBPUSD' : 2}
             # candles = await self.GetHistory('GBPUSD')
             # print('candles' , candles)
-            trade_dict = {'symbol': 'GBPUSD' ,"trade_side" :1  , "volume": int(0.02 * 100000 * 100) ,'sl': 558}
-            await self.send_market_order(**trade_dict)
+            # trade_dict = {'symbol': 'GBPUSD' ,"trade_side" :1  , "volume": int(0.02 * 100000 * 100) ,'sl': 558}
+            # await self.send_market_order(**trade_dict)
 
             await self.ws.close()
