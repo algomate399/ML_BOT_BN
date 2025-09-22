@@ -9,8 +9,8 @@ from sklearn.linear_model import LinearRegression
 # defining strategy parameters
 params_1 = [{'strategy': 'MomTrading', 'Components': None, 'interval': 'D'}]
 
-Strategy_On_params = {'EURUSD':params_1 , 'GBPUSD':params_1  , 'NZDUSD':params_1}
-Weights = {'EURUSD': 0.449, 'NZDUSD': 0.267, 'GBPUSD': 0.283}
+Strategy_On_params = {'NZDUSD':params_1 , 'GBPUSD':params_1 , 'EURUSD':params_1}
+Weights = {'EURUSD': 0.395, 'GBPUSD': 0.489, 'NZDUSD': 0.115}
 
 
 def load_csv(symbol ,drop_date=None):

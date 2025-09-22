@@ -31,7 +31,6 @@ class PredictorEngine:
         self.base_ml = [None]
         self.series_idx = None
         self.Vol_Model = None
-        self.TRADING_HAULT_PERIOD = None
         self.load_model()
 
     def load_model(self):
@@ -93,22 +92,19 @@ class PredictorEngine:
 
     def VolatilityRegimer(self , x  , lookback ,DoubleSmoothingWindow) :
         DailyChange=x.rename('DailyChange')
-        Volatility=DailyChange.ewm(span=lookback , min_periods=1).std().rename('Volatility')
-
+        Volatility=DailyChange.rolling(window=lookback).std().rename('Volatility')
         if DoubleSmoothingWindow:
-            Volatility = Volatility.ewm(span=DoubleSmoothingWindow , min_periods=1).mean()
+            Volatility = Volatility.rolling(window=DoubleSmoothingWindow).mean()
 
         FEAT=pd.concat([DailyChange , Volatility] , axis=1).dropna()
         regimes=pd.Series(self.Vol_Model.predict(FEAT) , index=FEAT.index , name='_VOL_RAW_REG_')
-        mean_vol=FEAT.groupby(regimes)['Volatility'].mean().sort_values()
-        regime_order={regime : i for i , regime in enumerate(mean_vol.index)}
-        regimes=regimes.map(regime_order)
-        return regimes , regimes[regimes == regimes.max()].index
+
+        return regimes
 
     def GetMarketRegime(self) :
         daily_change=(self.data['close']-self.data['close'].shift(1)) / self.data['close'].shift(1)
         HurstRegime=ComputeRegime_HURST(self.data['close'] , window=100)
-        _VOL_RAW_REG_ , self.TRADING_HAULT_PERIOD=self.VolatilityRegimer(daily_change , **self.Vol_Params)
+        _VOL_RAW_REG_ =self.VolatilityRegimer(daily_change , **self.Vol_Params)
 
         REGIME_FEAT={}
         for w in [10 , 30 , 60 , 100] :
@@ -199,17 +195,23 @@ class PredictorEngine:
 
         pip_size=0.01 if ('XAUUSD' == self.symbol) else (0.001 if "XAGUSD" == self.symbol else 0.0001)
 
+#       days
+        pos_candle=x['open'] < x['close']
+        neg_candle=x['open'] > x['close']
+        SL_RANG_POS=(x['open']-x['low']).rename('SL_RANG_POS')
+        SL_RANG_NEG=(x['high']-x['open']).rename('SL_RANG_NEG')
+
         if signal>0:
-            up_days=x['open'] < x['close']
-            SL_RANG_POS=(x['open']-x['low'])[up_days]
-            SL_RANG_POS=SL_RANG_POS.reindex(x.index , method='ffill').rename('SL_RANG_POS')
-            MAX_STOP_POS=SL_RANG_POS.rolling(window=lookback , min_periods=2).quantile(quantiles).fillna(0.0)
+    #       bullish days
+            contra_move_bullish=SL_RANG_POS[pos_candle]
+            contra_move_bullish=contra_move_bullish.reindex(x.index , method='ffill')
+            MAX_STOP_POS=contra_move_bullish.rolling(window=lookback , min_periods=2).quantile(quantiles).fillna(0.0).rename('MAX_STOP_POS')
             var = MAX_STOP_POS.iloc[-1]
         elif signal<0:
-            dn_days=x['open'] > x['close']
-            SL_RANG_NEG=(x['high']-x['open'])[dn_days]
-            SL_RANG_NEG=SL_RANG_NEG.reindex(x.index , method='ffill').rename('SL_RANG_NEG')
-            MAX_STOP_NEG=SL_RANG_NEG.rolling(window=lookback , min_periods=2).quantile(quantiles).fillna(0.0)
+    #       bearish days
+            contra_move_bearish=SL_RANG_NEG[neg_candle]
+            contra_move_bearish=contra_move_bearish.reindex(x.index , method='ffill')
+            MAX_STOP_NEG=contra_move_bearish.rolling(window=lookback , min_periods=2).quantile(quantiles).fillna(0.0).rename('MAX_STOP_NEG')
             var = MAX_STOP_NEG.iloc[-1]
 
         return var/pip_size

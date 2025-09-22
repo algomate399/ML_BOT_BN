@@ -27,7 +27,7 @@ class MetaApi:
 
         # sending email response :
         msg='Engine refreshed @ :{}'.format(datetime.now(self.time_zone))
-        self.send_email_notification(msg)
+        # self.send_email_notification(msg)
 
     def Refresh_Var(self):
         self.error=None
@@ -78,7 +78,6 @@ class MetaApi:
                         sig  ,  sl = model.GetPrediction()
                         SIG+=sig
                         SL[sig] = sl
-                        time.sleep(3)
 
                 if SIG:
                     Signals[ticker] = SIG

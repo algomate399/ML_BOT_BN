@@ -6,7 +6,7 @@ import math
 from Params import Weights
 from datetime import datetime, timedelta,timezone
 from pytz import timezone
-import asyncio
+
 
 def trend_bar_transformer(trendbar: dict):
     tz = timezone("Asia/Kolkata")
@@ -268,4 +268,9 @@ class ForexApi:
             self.error.append(self.api.error)
         else:
             self.Signals , self.sl_in_pips=self.api.GenerateSignal()
+
+
+
+
+
 

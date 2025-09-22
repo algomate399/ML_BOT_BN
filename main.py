@@ -23,6 +23,7 @@ async def primary_task():
         await fx.start()
 
 async def secondary_task_1():
+        fx.RefreshVar()
         fx.symbol_list=currency
         fx.action='process_signals'
         await fx.start()
@@ -32,10 +33,9 @@ async def secondary_task_2():
         fx.action = 'execute_signals'
         await fx.start()
 
-        if fx.error:
-            fx.api.send_email_notification(fx.error)
-        else:
-            fx.api.send_email_notification(fx.Signals)
+async def task():
+    await secondary_task_1()
+    await secondary_task_2()
 
 def run_async(x):
     asyncio.run(x)
@@ -66,16 +66,7 @@ def process_positions():
 @app.route('/process_signals')
 def process_signals():
 
-    t = threading.Thread(target=run_async , args=(secondary_task_1() , ))
-    t.start()
-
-    return jsonify({"status": "ok"})
-
-
-@app.route('/submit_signals')
-def submit_signals():
-
-    t = threading.Thread(target=run_async , args=(secondary_task_2() , ))
+    t = threading.Thread(target=run_async , args=(task() , ))
     t.start()
 
     return jsonify({"status": "ok"})
