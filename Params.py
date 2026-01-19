@@ -4,17 +4,22 @@ import pandas as pd
 import numpy as np
 from hurst import compute_Hc
 from sklearn.linear_model import LinearRegression
+import yfinance as yf
 
 
 # defining strategy parameters
 params_1 = [{'strategy': 'MomTrading', 'Components': None, 'interval': 'D'}]
 
-Strategy_On_params = {'NZDUSD':params_1 , 'GBPUSD':params_1 , 'EURUSD':params_1}
-Weights = {'EURUSD': 0.255, 'GBPUSD': 0.407, 'NZDUSD': 0.337}
+Strategy_On_params = {'Adaniports':params_1 , 'AXIS':params_1 , 'TCS':params_1 , 'Reliance':params_1 , 'MM':params_1 , 'CIPLA':params_1 , 'JSWSTEEL':params_1}
+
+# equal weights
+Wi = 1/len(Strategy_On_params)
+
+Weight = {'AXIS':Wi  , 'TCS':Wi , 'Reliance':Wi , 'MM':Wi , 'Adaniports':Wi , 'CIPLA':Wi , 'JSWSTEEL':Wi}
 
 
 def load_csv(symbol ,drop_date=None):
-    file_path = os.path.join('database_fx', symbol, '{}.csv'.format(symbol))
+    file_path = os.path.join('database_fx', symbol, f'{symbol}.csv')
     if os.path.exists(file_path):
        d = pd.read_csv(file_path , index_col=0 , parse_dates=True)
        return d.loc[d.index.normalize()!=pd.Timestamp(drop_date)]
@@ -35,8 +40,7 @@ def TrendIntensityIndex(dt , window):
     day_above_average = (dt>ma).rolling(window=window).sum()
     return 100* day_above_average/window
 
-
-def calculate_MOM_Burst( dt ,  lookback):
+def calculate_MOM_Burst( dt ,  lookback  ):
 #    calculating the indicator mom burst
     candle_range = dt['high']-dt['low']
     mean_range = candle_range.rolling(window  = lookback).mean()
@@ -71,3 +75,18 @@ def ComputeRegime_HURST(dt , window):
     rolling_hurst_exponents = dt.rolling(window=window).apply(lambda X: compute_Hc(X)[0] , raw =False)
     regime = pd.Series(rolling_hurst_exponents , rolling_hurst_exponents.index  , name = 'HurstRegime')
     return regime
+
+def GetHistory(symbol):
+     return get_delta_historical_data(symbol)
+
+
+def get_delta_historical_data(symbol , interval='1d' , period='1y') :
+    symbol_ID={'AXIS' : 'AXISBANK.NS' , 'TCS' : 'TCS.NS' , 'Adaniports':'ADANIPORTS.NS' , 'MM':'M&M.NS' , 'Reliance':'RELIANCE.NS' , 'CIPLA':'CIPLA.NS' , 'JSWSTEEL':'JSWSTEEL.NS'}
+
+    try:
+        data = yf.download(symbol_ID[symbol] , period=period , interval=interval , multi_level_index=False)
+        data.columns = ['close' , 'high' , 'low' ,  'open' , 'volume']
+    except:
+        print('{} Unable to Download:'.format(symbol))
+
+    return data

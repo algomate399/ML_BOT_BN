@@ -31,15 +31,17 @@ class PredictorEngine:
         self.base_ml = [None]
         self.series_idx = None
         self.Vol_Model = None
+        self.Hurst_Model = None
         self.load_model()
 
     def load_model(self):
-        self.params  ,self.sl_params , self.Vol_Params  , ensemble = get_ensemble_n(self.strategy_name)
+        self.params , self.sl_params , self.Vol_Params , ensemble=get_ensemble_n(self.strategy_name)
         for n in range(1,ensemble+1):
             self.base_ml.append(self.get_model(n, 'base_model'))
 
         self.ensemble_model = self.get_model(1,'ENSEM')
         self.Vol_Model = self.get_model(1 , 'Vol_Model')
+        self.Hurst_Model = self.get_model(1 , 'Hurst_Model')
 
     def get_model(self, n, model):
         file_name = f'{self.strategy_name}_{n}' if model == 'base_model' else f'{self.strategy_name}_{model}'
@@ -61,7 +63,7 @@ class PredictorEngine:
         else:
             self.data = history[0]
 
-    def Normalization(self , features , normal_window=10 , skip_col: list = ['_VOL_RAW_REG_'] , normalization=True , winsorization=False) :
+    def Normalization(self , features , normal_window=10 , skip_col: list = ['_VOL_RAW_REG_' , '_HURST_RAW_REG_'] , normalization=True , winsorization=False) :
 
         # preprocessing features
         features=features.dropna(axis=0)
@@ -101,10 +103,17 @@ class PredictorEngine:
 
         return regimes
 
+    def Hurst_regimer(self , x , hurst) :
+        DailyChange=x.rename('DailyChange')
+        FEAT=pd.concat([DailyChange , hurst] , axis=1).dropna()
+        regimes=pd.Series(self.Hurst_Model.predict(FEAT) , index=FEAT.index , name='_HURST_RAW_REG_')
+        return regimes
+
     def GetMarketRegime(self) :
         daily_change=(self.data['close']-self.data['close'].shift(1)) / self.data['close'].shift(1)
         HurstRegime=ComputeRegime_HURST(self.data['close'] , window=100)
         _VOL_RAW_REG_ =self.VolatilityRegimer(daily_change , **self.Vol_Params)
+        _Hurst_RAW_REG_=self.Hurst_regimer(daily_change , HurstRegime)
 
         REGIME_FEAT={}
         for w in [10 , 30 , 60 , 100] :
@@ -115,7 +124,7 @@ class PredictorEngine:
             REGIME_FEAT[f'Kuafman_ER_{w}']=kaufMan_EF_Ratio(self.data['close'] , w)
 
         # joining the Market regime feature set
-        return pd.concat([HurstRegime , pd.DataFrame(REGIME_FEAT) , _VOL_RAW_REG_] , axis = 1)
+        return pd.concat([HurstRegime , pd.DataFrame(REGIME_FEAT) , _VOL_RAW_REG_ , _Hurst_RAW_REG_] , axis = 1)
 
     def MomTrading(self , window , lookback , lags=5 , normal_window=10 , X_col=None) :
         # creating variable
@@ -177,7 +186,7 @@ class PredictorEngine:
 
     def generate_features(self, params):
         normalize_features = None
-        if self.strategy_name=='MomTrading_{}'.format(self.symbol):
+        if self.strategy_name=='MomTrading_{}'.format(self.symbol) or self.strategy_name=='MeanTrading_{}'.format(self.symbol):
             normalize_features = self.MomTrading(**params)
 
         return normalize_features.tail(5)
@@ -193,25 +202,23 @@ class PredictorEngine:
         x =self.data
         var = 0
 
-        pip_size=0.01 if ('XAUUSD' == self.symbol) else (0.001 if "XAGUSD" == self.symbol else 0.0001)
-
 #       days
         pos_candle=x['open'] < x['close']
         neg_candle=x['open'] > x['close']
         SL_RANG_POS=(x['open']-x['low']).rename('SL_RANG_POS')
         SL_RANG_NEG=(x['high']-x['open']).rename('SL_RANG_NEG')
 
-        if signal>0:
+        if signal > 0 :
     #       bullish days
             contra_move_bullish=SL_RANG_POS[pos_candle]
             contra_move_bullish=contra_move_bullish.reindex(x.index , method='ffill')
             MAX_STOP_POS=contra_move_bullish.rolling(window=lookback , min_periods=2).quantile(quantiles).fillna(0.0).rename('MAX_STOP_POS')
-            var = MAX_STOP_POS.iloc[-1]
-        elif signal<0:
+            var=MAX_STOP_POS.iloc[-1]
+        elif signal < 0 :
     #       bearish days
             contra_move_bearish=SL_RANG_NEG[neg_candle]
             contra_move_bearish=contra_move_bearish.reindex(x.index , method='ffill')
             MAX_STOP_NEG=contra_move_bearish.rolling(window=lookback , min_periods=2).quantile(quantiles).fillna(0.0).rename('MAX_STOP_NEG')
-            var = MAX_STOP_NEG.iloc[-1]
+            var=MAX_STOP_NEG.iloc[-1]
 
-        return var/pip_size
+        return var
