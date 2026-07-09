@@ -1,26 +1,22 @@
-from ClassLib import *
-from MetaApp import MetaApi
+from utils_functions import *
+from utils_classes import *
+from MetaApi import *
+import __main__
 from flask import Flask, render_template,request , jsonify
 import threading
-import __main__
 
-
-# setting Attributes to Main
-setattr(__main__ , 'NoiseEnhancer' ,NoiseEnhancer)
 setattr(__main__ , 'BaggingBootstrapper' ,BaggingBootstrapper)
 
-Algo = MetaApi()
-Crypto = ['AXIS' , 'TCS'   , 'Reliance' , 'Adaniports' , 'MM' , 'CIPLA' , 'JSWSTEEL']
+
+api = MetaApi()
 
 def primary_task():
-    Algo.Refresh_Var()
-    Algo.symbol_list = Crypto
-    Algo.UpdateHistory()
-    Algo.GenerateSignals()
+    api.UpdateHistory()
+    api.GenerateSignals()
 
 
 def secondary_task():
-    Algo.place_order()
+    api.place_order()
 
 def task():
     primary_task()

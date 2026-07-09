@@ -10,7 +10,8 @@ hurst==0.0.5
 secure-smtplib
 flask
 pytz
-yfinance
+ccxt
 hmmlearn==0.3.2
 scipy ==1.13.1
+bottleneck==1.3.7
 ./dist/pandas_ta-0.3.14b0-py3-none-any.whl
