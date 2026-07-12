@@ -92,8 +92,9 @@ class RiskAdjustmentEngine:
         pass
 
     def GetRiskData(self , x ,  lookback , multiplier):
+
         atr = ta.atr(x['high'], x['low'], x['close'], lookback)
-        atr_dist_pct = (atr * multiplier) / x['open']
+        atr_dist_pct = (atr.shift(1) * multiplier) / x['open']
         
 #       days
         SL_RANG_POS=((x['open']-x['low']) / x['open']).rename('SL_RANG_POS')
@@ -106,7 +107,7 @@ class RiskAdjustmentEngine:
         MAX_STOP_NEG = atr_dist_pct.rename('MAX_STOP_NEG')
 
         # setting up the risk data
-        RiskData=pd.concat([-SL_RANG_POS ,  -MAX_STOP_POS.shift(1), -SL_RANG_NEG ,-MAX_STOP_NEG.shift(1)] , axis=1)
+        RiskData=pd.concat([-SL_RANG_POS ,  -MAX_STOP_POS, -SL_RANG_NEG ,-MAX_STOP_NEG] , axis=1)
 
         return RiskData , (atr * multiplier).iloc[-1]
 

@@ -105,6 +105,8 @@ class MetaApi:
         InitialCapital=100
         margin_x=2
         AvailableMargin = InitialCapital * margin_x
+        DailyRisk = 0.02
+        RiskExposure = InitialCapital * DailyRisk
 
         for __STR__ , signal in self.__SIGNALS__.items() :
             symbol = __STR__.split('_')[1]
@@ -115,6 +117,7 @@ class MetaApi:
             trade_data={
                 f"SL_{ID[symbol]}" : self.sl_points[__STR__] ,
                 f"V_{ID[symbol]}" : self.Weights[__STR__] * AvailableMargin ,
+                f"RV_{ID[symbol]}" : self.Weights[__STR__] * RiskExposure ,
                 f"Y_PRED_{ID[symbol]}" : signal ,
             }
 

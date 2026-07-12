@@ -111,24 +111,34 @@ class PredictorEngine:
 
         standardized_features=standardized_features.replace([np.inf , -np.inf] , np.nan)
 
-        return standardized_features.shift().dropna(axis=0)
+        return standardized_features
 
     def __GET_SIG__(self):
         self.load_history()
-        X = [self.GenFeatures(**self.str_params[i]) for i in range(len(self.str_params))]
+        __RAW_FEAT__= [self.GenFeatures(**self.str_params[i]) for i in range(len(self.str_params))]
+
+        X = [r.shift().dropna(axis=0) for r in __RAW_FEAT__]
 
         common_index = X[0].index
         for x in X[1:]:
             common_index = common_index.intersection(x.index)
 
+        # historical trades
         hard_predictions = [self.__BS_MOD__[i].predict(X[i].loc[common_index]) for i in range(len(X))]
         y_pred=np.sign(np.sum(hard_predictions , axis=0))
         comm_slippage = np.abs(y_pred) * (self.SL_COMM['COMM'] / 100)
         trades =self.risk_mng.GetAdjustedReturns(self.t_returns.loc[common_index].copy() , y_pred , self.RISK_DATA.loc[common_index].copy())-comm_slippage
 
+        # today prediction
+        try:
+            today_prediction = [self.__BS_MOD__[i].predict(__RAW_FEAT__[i].iloc[-1].values.reshape(1, -1)) for i in range(len(__RAW_FEAT__))]
+            today_prediction = np.sign(np.sum(today_prediction))
+        except :
+            today_prediction = 0
+
         # logs ////
         # predictions=pd.Series(y_pred , index=common_index , dtype='int64')
         # print(self.symbol , predictions)
-        # print(self.symbol , self.sl_points)
+        # print(self.symbol , self.sl_points , today_prediction)
 
-        return y_pred[-1], trades[y_pred!=0] , self.sl_points
+        return today_prediction , trades[y_pred!=0] , self.sl_points
