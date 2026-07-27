@@ -22,9 +22,10 @@ class PredictorEngine:
     def load_history(self):
         t_day = datetime.now(time_zone).date()
         self.data = load_csv(self.symbol , t_day)
-        args = {**self.SL_COMM['sl_params']}
-        self.RISK_DATA  , self.sl_points = self.risk_mng.GetRiskData(self.data.copy() , **args)
         self.t_returns=((self.data['close']-self.data['open']) / self.data['open'])
+        args = {**self.SL_COMM['sl_params']}
+        atr = ta.atr(self.data['high'] , self.data['low'] , self.data['close'] , args['lookback'])
+        self.sl_points = args['multiplier'] * atr.iloc[-1]
 
     def GenFeatures(self , X_col  , **kwargs):
         lags = 5
@@ -115,30 +116,18 @@ class PredictorEngine:
 
     def __GET_SIG__(self):
         self.load_history()
-        __RAW_FEAT__= [self.GenFeatures(**self.str_params[i]) for i in range(len(self.str_params))]
-
-        X = [r.shift().dropna(axis=0) for r in __RAW_FEAT__]
-
-        common_index = X[0].index
-        for x in X[1:]:
-            common_index = common_index.intersection(x.index)
-
-        # historical trades
-        hard_predictions = [self.__BS_MOD__[i].predict(X[i].loc[common_index]) for i in range(len(X))]
-        y_pred=np.sign(np.sum(hard_predictions , axis=0))
-        comm_slippage = np.abs(y_pred) * (self.SL_COMM['COMM'] / 100)
-        trades =self.risk_mng.GetAdjustedReturns(self.t_returns.loc[common_index].copy() , y_pred , self.RISK_DATA.loc[common_index].copy())-comm_slippage
+        X= [self.GenFeatures(**self.str_params[i]) for i in range(len(self.str_params))]
 
         # today prediction
         try:
-            today_prediction = [self.__BS_MOD__[i].predict(__RAW_FEAT__[i].iloc[-1].values.reshape(1, -1)) for i in range(len(__RAW_FEAT__))]
+            today_prediction = [self.__BS_MOD__[i].predict(X[i].iloc[-1].values.reshape(1, -1)) for i in range(len(X))]
             today_prediction = np.sign(np.sum(today_prediction))
         except :
             today_prediction = 0
 
-        # logs ////
-        # predictions=pd.Series(y_pred , index=common_index , dtype='int64')
-        # print(self.symbol , predictions)
-        # print(self.symbol , self.sl_points , today_prediction)
+        print(self.symbol , self.sl_points , today_prediction)
 
-        return today_prediction , trades[y_pred!=0] , self.sl_points
+        return today_prediction , self.sl_points , self.compute_inverse_vol()
+
+    def compute_inverse_vol(self , window=20) :
+        return 1 / self.t_returns.rolling(window=window).std().clip(lower=1e-4).iloc[-1]

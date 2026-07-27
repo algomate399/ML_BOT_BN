@@ -31,19 +31,6 @@ def load_models(n , strategy_name):
         mod = pk.load(f)
     return mod
 
-def load_trade_history(strategy_name):
-    file_name = 'trades'
-    _PATH_ = os.path.join('TradeHistory' , strategy_name, file_name)
-    trades = pd.read_csv(_PATH_ , index_col=0 , parse_dates=True)
-
-    file_name = 'weight_params'
-    _PATH_ = os.path.join('TradeHistory' , strategy_name, file_name)
-    with open(_PATH_  ,'r') as f:
-        weight_params = json.load(f)
-
-    return trades , weight_params
-
-
 def GetHistory(symbol , interval='1d' , days=365) :
     symbol_ID={'BTC-USD' : 'BTC/USDT:USDT' , 'ETH-USD' : 'ETH/USDT:USDT' , 'SOL-USD' : 'SOL/USDT:USDT'}
 
