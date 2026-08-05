@@ -15,6 +15,7 @@ class MetaApi:
         self.weight_params = {}
         self.Weights = {}
         self.sl_points = {}
+        self.tp_points={}
         self.inverse_vol={}
         self.load_str()
 
@@ -55,7 +56,7 @@ class MetaApi:
 
     def GenerateSignals(self):
 
-        self.__SIGNALS__  , self.Weights , self.trades , self.sl_points = {} , {} , {} , {}
+        self.__SIGNALS__  , self.Weights ,  self.sl_points = {} , {} , {}
 
         if not self._ON_SYMBOL_:
             return self.__SIGNALS__
@@ -63,9 +64,9 @@ class MetaApi:
         for __STR__ , mod in self.mods.items():
             symbol = __STR__.split('_')[1]
             if symbol in self._ON_SYMBOL_:
-                self.__SIGNALS__[__STR__]  , self.sl_points[__STR__] , self.inverse_vol[__STR__] = mod.__GET_SIG__()
+                self.__SIGNALS__[__STR__]  , self.sl_points[__STR__] , self.tp_points[__STR__] , self.inverse_vol[__STR__] = mod.__GET_SIG__()
 
-        if self.__SIGNALS__:
+        if any(self.__SIGNALS__.values()):
            self.Weights = self.compute_weights()
 
     def compute_weights(self , w_clip=0.20):
@@ -99,6 +100,7 @@ class MetaApi:
 
             trade_data={
                 f"SL_{ID[symbol]}" : self.sl_points[__STR__] ,
+                f"TP_{ID[symbol]}" : self.tp_points[__STR__] ,
                 f"V_{ID[symbol]}" : self.Weights[_STR][symbol] * AvailableMargin ,
                 f"RV_{ID[symbol]}" : self.Weights[_STR][symbol] * RiskExposure ,
                 f"Y_PRED_{ID[symbol]}" : signal ,
