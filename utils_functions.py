@@ -47,6 +47,12 @@ def load_dist_extractor(strategy_name):
     return [m for m in mod]
 
 
+def load_trade_logs(strategy_name):
+    file_name = 'trade_logs.csv'
+    _PATH_=os.path.join('Models' , strategy_name , file_name)
+    return pd.read_csv(_PATH_,index_col=0 , parse_dates=True)
+
+
 def GetHistory(symbol , interval='1d' , days=365) :
     symbol_ID={'BTC-USD' : 'BTC/USDT:USDT' , 'ETH-USD' : 'ETH/USDT:USDT' , 'SOL-USD' : 'SOL/USDT:USDT'}
 

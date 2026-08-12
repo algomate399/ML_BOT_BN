@@ -13,6 +13,7 @@ class PredictorEngine:
         self.__BS_MOD__ = [load_models(m , self.__NAME__) for m in range(1 , n_models + 1)]
         self.__META_MOD__ = load_meta_models(self.__NAME__)
         self.__DIST_MOD__ = load_dist_extractor(self.__NAME__)
+        self.__TRADE_LOGS__ = load_trade_logs(self.__NAME__)
         self.__START_DATE__ = datetime.strptime(trained_upto , "%Y-%m-%d") + timedelta(days=1)
         self.data = None
         self.sl_points = None
@@ -111,6 +112,7 @@ class PredictorEngine:
         eps=1e-5
         ComSlip=self.SL_COMM['COMM']
         meta_features = pd.DataFrame()
+        trades = []
 
         # past records
         _hX = [x.shift(1).dropna() for x in X]
@@ -122,7 +124,19 @@ class PredictorEngine:
         INPUT_DT = [x.loc[common_index] for x in _hX]
         hard_predictions = [self.__BS_MOD__[i].predict(INPUT_DT[i].iloc[: , :-1] , INPUT_DT[i].iloc[: , -1]) for i in range(len(self.__BS_MOD__))]
 
-        if any([(np.sum(hard_predictions[i]!=0) < long_window) for i in range(len(self.__BS_MOD__))]):
+        eval_returns_asset = self.t_returns.loc[common_index]
+
+        for i in range(len(self.__BS_MOD__)):
+            rets = (hard_predictions[i] * eval_returns_asset) - (np.abs(hard_predictions[i]) * ComSlip / 100)
+            active_trade_mask=(hard_predictions[i] != 0)
+            active_trade_rets=rets[active_trade_mask]
+
+            trade_logs = self.__TRADE_LOGS__[f'm_{i}']
+            from_date = trade_logs.index[-1] + timedelta(days=1)
+            to_dates = common_index[-1]
+            trades.append(pd.concat([trade_logs[trade_logs!=0.0] , active_trade_rets[from_date:]])[:to_dates].iloc[-long_window:])
+
+        if np.any([len(trade)<long_window for trade in trades]):
             return meta_features
 
         lst_indices = X[-1].index[-1]
@@ -140,12 +154,7 @@ class PredictorEngine:
         meta_features['mean_dr_score'] = np.mean(dir_scores , axis=0)
         meta_features['mean_confi_lvl'] = np.mean(confidence_lvl , axis=0)
 
-        eval_returns_asset = self.t_returns.loc[common_index]
-
-        for i in range(len(self.__BS_MOD__)):
-            rets = (hard_predictions[i] * eval_returns_asset) - (np.abs(hard_predictions[i]) * ComSlip / 100)
-            active_trade_mask=(hard_predictions[i] != 0)
-            trade_rets=rets[active_trade_mask].iloc[-long_window:]
+        for i ,trade_rets in enumerate(trades):
 
             # 1. Trade-level Sharpe Velocity
             t_fast_sharpe=compute_rolling_sharpe(trade_rets , window=short_window)
@@ -179,9 +188,9 @@ class PredictorEngine:
 
         self.load_history()
         X = [self.GenFeatures(**self.str_params[i]) for i in range(len(self.str_params))]
+
         try:
             meta_feat = self._GEN_META_features(X)
-
             if not meta_feat.empty:
                 meta_proba = self.__META_MOD__.predict_proba(meta_feat)[: , 1]
                 base_signal = meta_feat['signal'].iloc[-1]
